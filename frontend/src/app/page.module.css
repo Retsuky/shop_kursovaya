@@ -1,0 +1,47 @@
+.page {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  justify-content: center;
+  font-family: var(--font-geist-sans);
+  background: var(--bg-page);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.authPage {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  font-family: var(--font-geist-sans);
+  background: var(--bg-page);
+}
+
+.authMain {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  width: 100%;
+  padding: 0 24px 24px;
+}
+
+@media (max-width: 600px) {
+  .authPage {
+    padding: 16px;
+  }
+
+  .content {
+    padding: 0 16px 16px;
+  }
+}
