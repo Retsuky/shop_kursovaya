@@ -45,6 +45,7 @@
 }
 
 .login,
+.account,
 .logout {
   border-radius: 10px;
   padding: 10px 14px;
@@ -53,13 +54,15 @@
   cursor: pointer;
 }
 
-.login {
+.login,
+.account {
   border: none;
   background: var(--purple-main);
   color: var(--white);
 }
 
-.login:hover {
+.login:hover,
+.account:hover {
   background: var(--purple-hover);
 }
 
@@ -85,6 +88,7 @@
   }
 
   .login,
+  .account,
   .logout {
     flex: 1;
   }

@@ -76,7 +76,7 @@
 .benefitsSection {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .heading {
@@ -88,7 +88,7 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .card {
@@ -96,6 +96,7 @@
   border: 1px solid var(--border-light);
   border-radius: 14px;
   padding: 18px;
+  box-shadow: 0 8px 24px rgba(99, 63, 255, 0.06);
 }
 
 .card h3 {
@@ -115,14 +116,17 @@
   border: 1px solid var(--border-light);
   border-radius: 16px;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .list {
-  margin: 18px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .item {
@@ -132,6 +136,8 @@
   padding: 14px;
   border: 1px solid var(--border-light);
   border-radius: 12px;
+  background: var(--bg-page);
+  box-shadow: 0 8px 24px rgba(99, 63, 255, 0.04);
 }
 
 .id {

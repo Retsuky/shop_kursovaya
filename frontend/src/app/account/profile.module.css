@@ -1,0 +1,72 @@
+.card {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--purple-light);
+  color: var(--purple-main);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.title {
+  color: var(--text-dark);
+  font-size: 32px;
+}
+
+.subtitle {
+  color: var(--text-gray);
+  line-height: 1.6;
+  max-width: 640px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.infoItem {
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 18px;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.infoItem span {
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.infoItem strong {
+  color: var(--text-dark);
+  font-size: 17px;
+}
+
+@media (max-width: 900px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+}
