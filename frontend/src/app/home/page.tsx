@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Header from "../components/header/Header";
 import styles from "../page.module.css";
 import homeStyles from "./home.module.css";
@@ -37,12 +38,12 @@ export default function HomePage() {
               Прозрачные статусы, понятные сроки и удобная оплата для каждого участника.
             </p>
             <div className={homeStyles.actions}>
-              <button type="button" className={homeStyles.primary}>
+              <Link href="/purchases/new" className={homeStyles.primary}>
                 Создать закупку
-              </button>
-              <button type="button" className={homeStyles.secondary}>
+              </Link>
+              <Link href="/purchases" className={homeStyles.secondary}>
                 Найти закупку
-              </button>
+              </Link>
             </div>
           </section>
 
@@ -78,7 +79,9 @@ export default function HomePage() {
               <h2>Готовы к первой совместной закупке?</h2>
               <p>Подключайте участников и запускайте сбор заказов за пару минут.</p>
             </div>
-            <button type="button">Начать бесплатно</button>
+            <Link href="/purchases/new" className={homeStyles.ctaButton}>
+              Начать бесплатно
+            </Link>
           </section>
         </section>
       </main>

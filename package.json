@@ -3,17 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix frontend",
+    "dev": "concurrently -n frontend,backend -c cyan,magenta \"pnpm --dir frontend run dev\" \"pnpm --dir backend run dev\"",
+    "dev:frontend": "pnpm --dir frontend run dev",
+    "dev:backend": "pnpm --dir backend run dev",
     "build": "npm run build --prefix frontend",
     "start": "npm run start --prefix frontend",
     "lint": "npm run lint --prefix frontend"
   },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "pg": "^8.20.0"
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

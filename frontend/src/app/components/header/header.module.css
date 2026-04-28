@@ -7,12 +7,50 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.leftCluster {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.inlineNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inlineNavLink {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-gray);
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.inlineNavLink:hover {
+  color: var(--purple-main);
+  background: var(--purple-light);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 12px;
+  outline-offset: 2px;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--purple-main);
 }
 
 .logo {
@@ -77,10 +115,29 @@
   color: var(--red-danger);
 }
 
+@media (max-width: 900px) {
+  .inlineNav {
+    width: auto;
+    padding-top: 0;
+  }
+}
+
 @media (max-width: 700px) {
   .header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .leftCluster {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .inlineNav {
+    width: 100%;
+    flex-wrap: wrap;
+    padding-bottom: 2px;
   }
 
   .actions {

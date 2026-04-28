@@ -1,0 +1,443 @@
+const express = require("express");
+const pool = require("../config/db");
+const requireAuth = require("../middleware/requireAuth");
+
+const router = express.Router();
+
+const STATUS_FLOW = ["collecting", "payment", "supplier_order", "delivery", "completed"];
+
+function mapPurchase(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    organizer_id: row.organizer_id,
+    title: row.title,
+    description: row.description ?? "",
+    product_name: row.product_name,
+    unit_price: row.unit_price != null ? String(row.unit_price) : "0",
+    min_participants: row.min_participants,
+    deadline: row.deadline,
+    city: row.city ?? "",
+    pickup_address: row.pickup_address ?? "",
+    status: row.status,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    organizer_name: row.organizer_name,
+    participant_count: row.participant_count != null ? Number(row.participant_count) : undefined,
+    total_quantity:
+      row.total_quantity != null ? Number(row.total_quantity) : undefined,
+  };
+}
+
+router.get("/", async (req, res) => {
+  const status = typeof req.query.status === "string" ? req.query.status : null;
+
+  try {
+    const params = [];
+    let where = "WHERE 1=1";
+
+    if (status) {
+      params.push(status);
+      where += ` AND p.status = $${params.length}`;
+    }
+
+    const result = await pool.query(
+      `
+        SELECT
+          p.*,
+          u.name AS organizer_name,
+          (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+        FROM purchases p
+        INNER JOIN users u ON u.id = p.organizer_id
+        ${where}
+        ORDER BY p.created_at DESC
+      `,
+      params
+    );
+
+    return res.status(200).json(result.rows.map(mapPurchase));
+  } catch (error) {
+    console.error("List purchases:", error);
+    return res.status(500).json({ message: "Не удалось загрузить список закупок." });
+  }
+});
+
+router.get("/mine", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const organized = await pool.query(
+      `
+        SELECT
+          p.*,
+          u.name AS organizer_name,
+          (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+        FROM purchases p
+        INNER JOIN users u ON u.id = p.organizer_id
+        WHERE p.organizer_id = $1
+        ORDER BY p.created_at DESC
+      `,
+      [userId]
+    );
+
+    const joined = await pool.query(
+      `
+        SELECT
+          p.*,
+          u.name AS organizer_name,
+          pp.quantity AS my_quantity,
+          (SELECT COUNT(DISTINCT px.user_id)::int FROM purchase_participants px WHERE px.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(px.quantity), 0)::int FROM purchase_participants px WHERE px.purchase_id = p.id) AS total_quantity
+        FROM purchase_participants pp
+        INNER JOIN purchases p ON p.id = pp.purchase_id
+        INNER JOIN users u ON u.id = p.organizer_id
+        WHERE pp.user_id = $1 AND p.organizer_id <> $1
+        ORDER BY p.created_at DESC
+      `,
+      [userId]
+    );
+
+    return res.status(200).json({
+      organized: organized.rows.map(mapPurchase),
+      joined: joined.rows.map((row) => ({
+        ...mapPurchase(row),
+        my_quantity: row.my_quantity != null ? Number(row.my_quantity) : undefined,
+      })),
+    });
+  } catch (error) {
+    console.error("Mine purchases:", error);
+    return res.status(500).json({ message: "Не удалось загрузить ваши закупки." });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
+  }
+
+  try {
+    const purchaseResult = await pool.query(
+      `
+        SELECT
+          p.*,
+          u.name AS organizer_name,
+          (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+        FROM purchases p
+        INNER JOIN users u ON u.id = p.organizer_id
+        WHERE p.id = $1
+      `,
+      [id]
+    );
+
+    const row = purchaseResult.rows[0];
+
+    if (!row) {
+      return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    const participantsResult = await pool.query(
+      `
+        SELECT pp.user_id, pp.quantity, usr.name AS user_name
+        FROM purchase_participants pp
+        INNER JOIN users usr ON usr.id = pp.user_id
+        WHERE pp.purchase_id = $1
+        ORDER BY pp.created_at ASC
+      `,
+      [id]
+    );
+
+    return res.status(200).json({
+      purchase: mapPurchase(row),
+      participants: participantsResult.rows.map((p) => ({
+        user_id: p.user_id,
+        quantity: p.quantity,
+        user_name: p.user_name,
+      })),
+    });
+  } catch (error) {
+    console.error("Get purchase:", error);
+    return res.status(500).json({ message: "Не удалось загрузить закупку." });
+  }
+});
+
+router.post("/", requireAuth, async (req, res) => {
+  const {
+    title,
+    description,
+    product_name,
+    unit_price,
+    min_participants,
+    deadline,
+    city,
+    pickup_address,
+  } = req.body;
+
+  if (
+    !title ||
+    !product_name ||
+    unit_price == null ||
+    min_participants == null ||
+    !deadline
+  ) {
+    return res.status(400).json({
+      message: "Обязательны поля: title, product_name, unit_price, min_participants, deadline.",
+    });
+  }
+
+  const priceNum = Number(unit_price);
+
+  if (!Number.isFinite(priceNum) || priceNum < 0) {
+    return res.status(400).json({ message: "Некорректная цена за единицу." });
+  }
+
+  const minP = Number(min_participants);
+
+  if (!Number.isInteger(minP) || minP < 1) {
+    return res.status(400).json({ message: "Минимум участников должен быть целым числом ≥ 1." });
+  }
+
+  const deadlineDate = new Date(deadline);
+
+  if (Number.isNaN(deadlineDate.getTime())) {
+    return res.status(400).json({ message: "Некорректная дата сбора." });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+        INSERT INTO purchases (
+          organizer_id, title, description, product_name, unit_price,
+          min_participants, deadline, city, pickup_address, status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'collecting')
+        RETURNING *
+      `,
+      [
+        req.user.id,
+        String(title).trim(),
+        description != null ? String(description).trim() : "",
+        String(product_name).trim(),
+        priceNum,
+        minP,
+        deadlineDate,
+        city != null ? String(city).trim() : "",
+        pickup_address != null ? String(pickup_address).trim() : "",
+      ]
+    );
+
+    const created = result.rows[0];
+    const u = await pool.query("SELECT name FROM users WHERE id = $1", [req.user.id]);
+
+    return res.status(201).json(
+      mapPurchase({
+        ...created,
+        organizer_name: u.rows[0]?.name,
+        participant_count: 0,
+        total_quantity: 0,
+      })
+    );
+  } catch (error) {
+    console.error("Create purchase:", error);
+    return res.status(500).json({ message: "Не удалось создать закупку." });
+  }
+});
+
+router.patch("/:id/status", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  const { status: nextStatus } = req.body;
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
+  }
+
+  if (!nextStatus || typeof nextStatus !== "string") {
+    return res.status(400).json({ message: "Укажите поле status." });
+  }
+
+  try {
+    const currentResult = await pool.query("SELECT * FROM purchases WHERE id = $1", [id]);
+    const current = currentResult.rows[0];
+
+    if (!current) {
+      return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    if (current.organizer_id !== req.user.id) {
+      return res.status(403).json({ message: "Только организатор может менять статус." });
+    }
+
+    if (nextStatus === "cancelled") {
+      await pool.query("UPDATE purchases SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2", [
+        "cancelled",
+        id,
+      ]);
+      const updated = await pool.query(
+        `
+          SELECT p.*, u.name AS organizer_name,
+          (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+          FROM purchases p INNER JOIN users u ON u.id = p.organizer_id WHERE p.id = $1
+        `,
+        [id]
+      );
+
+      return res.status(200).json(mapPurchase(updated.rows[0]));
+    }
+
+    const idx = STATUS_FLOW.indexOf(current.status);
+
+    if (idx === -1) {
+      return res.status(400).json({ message: "Текущий статус недопустим для перехода." });
+    }
+
+    if (current.status === "completed" || current.status === "cancelled") {
+      return res.status(400).json({ message: "Закупка уже завершена или отменена." });
+    }
+
+    const allowedNext = STATUS_FLOW[idx + 1];
+
+    if (!allowedNext || nextStatus !== allowedNext) {
+      return res.status(400).json({
+        message: `Следующий статус может быть только: ${allowedNext || "нет"}`,
+      });
+    }
+
+    await pool.query("UPDATE purchases SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2", [
+      nextStatus,
+      id,
+    ]);
+
+    const updated = await pool.query(
+      `
+        SELECT p.*, u.name AS organizer_name,
+        (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+        (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+        FROM purchases p INNER JOIN users u ON u.id = p.organizer_id WHERE p.id = $1
+      `,
+      [id]
+    );
+
+    return res.status(200).json(mapPurchase(updated.rows[0]));
+  } catch (error) {
+    console.error("Patch status:", error);
+    return res.status(500).json({ message: "Не удалось обновить статус." });
+  }
+});
+
+router.post("/:id/join", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  const qty = Number(req.body?.quantity);
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
+  }
+
+  if (!Number.isInteger(qty) || qty < 1) {
+    return res.status(400).json({ message: "Укажите quantity — целое число ≥ 1." });
+  }
+
+  try {
+    const pResult = await pool.query(
+      `
+        SELECT p.*,
+        (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+        FROM purchases p WHERE p.id = $1
+      `,
+      [id]
+    );
+
+    const purchase = pResult.rows[0];
+
+    if (!purchase) {
+      return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    if (purchase.status !== "collecting") {
+      return res.status(400).json({ message: "Присоединиться можно только на этапе сбора заявок." });
+    }
+
+    if (purchase.organizer_id === req.user.id) {
+      return res.status(400).json({ message: "Организатор не может добавлять заявку к своей же закупке." });
+    }
+
+    const dl = new Date(purchase.deadline);
+
+    if (dl.getTime() < Date.now()) {
+      return res.status(400).json({ message: "Срок сбора заявок истёк." });
+    }
+
+    await pool.query(
+      `
+        INSERT INTO purchase_participants (purchase_id, user_id, quantity)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (purchase_id, user_id)
+        DO UPDATE SET quantity = EXCLUDED.quantity
+      `,
+      [id, req.user.id, qty]
+    );
+
+    const totals = await pool.query(
+      `
+        SELECT
+          p.*,
+          u.name AS organizer_name,
+          (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          px.quantity AS my_quantity
+        FROM purchases p
+        INNER JOIN users u ON u.id = p.organizer_id
+        INNER JOIN purchase_participants px ON px.purchase_id = p.id AND px.user_id = $2
+        WHERE p.id = $1
+      `,
+      [id, req.user.id]
+    );
+
+    const row = totals.rows[0];
+
+    return res.status(200).json({
+      purchase: mapPurchase(row),
+      my_quantity: row?.my_quantity != null ? Number(row.my_quantity) : qty,
+    });
+  } catch (error) {
+    console.error("Join purchase:", error);
+    return res.status(500).json({ message: "Не удалось присоединиться к закупке." });
+  }
+});
+
+router.delete("/:id/join", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
+  }
+
+  try {
+    const pResult = await pool.query("SELECT * FROM purchases WHERE id = $1", [id]);
+    const purchase = pResult.rows[0];
+
+    if (!purchase) {
+      return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    if (purchase.status !== "collecting") {
+      return res.status(400).json({ message: "Отказаться можно только пока идёт сбор заявок." });
+    }
+
+    await pool.query("DELETE FROM purchase_participants WHERE purchase_id = $1 AND user_id = $2", [
+      id,
+      req.user.id,
+    ]);
+
+    return res.status(200).json({ message: "Вы вышли из закупки." });
+  } catch (error) {
+    console.error("Leave purchase:", error);
+    return res.status(500).json({ message: "Не удалось выйти из закупки." });
+  }
+});
+
+module.exports = router;

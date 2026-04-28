@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   clearAuthSession,
@@ -47,12 +48,23 @@ export default function Header() {
 
   return (
     <header className={styles.header}>
-      <div className={styles.brand}>
-        <span className={styles.logo}>СП</span>
-        <div>
-          <p className={styles.title}>Совместные покупки</p>
-          <p className={styles.subtitle}>Покупайте выгоднее вместе</p>
-        </div>
+      <div className={styles.leftCluster}>
+        <Link href="/home" className={styles.brand} aria-label="На главную">
+          <span className={styles.logo}>СП</span>
+          <div>
+            <p className={styles.title}>Совместные покупки</p>
+            <p className={styles.subtitle}>Покупайте выгоднее вместе</p>
+          </div>
+        </Link>
+
+        <nav className={styles.inlineNav} aria-label="Разделы">
+          <Link href="/home" className={styles.inlineNavLink}>
+            Главная
+          </Link>
+          <Link href="/purchases" className={styles.inlineNavLink}>
+            Закупки
+          </Link>
+        </nav>
       </div>
 
       <div className={styles.actions}>

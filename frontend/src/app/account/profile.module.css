@@ -8,6 +8,11 @@
   gap: 18px;
 }
 
+.cardMuted {
+  padding: 24px 28px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.04), rgba(255, 255, 255, 0.9));
+}
+
 .badge {
   align-self: flex-start;
   padding: 6px 12px;
@@ -27,6 +32,20 @@
   color: var(--text-gray);
   line-height: 1.6;
   max-width: 640px;
+}
+
+.titleLinkPrimary {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--purple-main);
+  text-decoration: none;
+}
+
+.titleLinkPrimary:hover {
+  text-decoration: underline;
 }
 
 .infoGrid {
@@ -53,6 +72,68 @@
 .infoItem strong {
   color: var(--text-dark);
   font-size: 17px;
+}
+
+.sectionHeading {
+  margin: 28px 0 0;
+  font-size: 20px;
+  color: var(--text-dark);
+}
+
+.miniList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.miniCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--white);
+}
+
+.miniTitle {
+  font-weight: 600;
+  color: var(--text-dark);
+  text-decoration: none;
+}
+
+.miniTitle:hover {
+  color: var(--purple-main);
+}
+
+.miniMeta {
+  font-size: 13px;
+  color: var(--text-gray);
+}
+
+.errorInline {
+  color: var(--red-danger);
+  font-size: 14px;
+}
+
+.linkBtn {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--purple-main);
+  color: var(--purple-main);
+  background: var(--white);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.linkBtn:hover {
+  background: var(--purple-main);
+  color: var(--white);
 }
 
 @media (max-width: 900px) {
