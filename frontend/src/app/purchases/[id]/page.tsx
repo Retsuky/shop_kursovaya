@@ -4,16 +4,16 @@ import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Header from "../../components/header/Header";
-import styles from "../../page.module.css";
-import pageStyles from "./detail.module.css";
+import MarketingFooter from "../../components/landing/MarketingFooter";
+import MarketingHeader from "../../components/landing/MarketingHeader";
+import tokens from "../../components/landing/landing-tokens.module.css";
+import homeLanding from "../../home/home-landing.module.css";
 import api from "../../../lib/api";
 import { getAuthSession, subscribeToAuthChanges, type AuthSession } from "../../../lib/auth";
 import type { Purchase, PurchaseStatus } from "../../../lib/purchasesMeta";
-import {
-  STATUS_LABELS,
-  getNextStatus,
-} from "../../../lib/purchasesMeta";
+import { getNextStatus } from "../../../lib/purchasesMeta";
+import PurchaseDetailStitch from "./PurchaseDetailStitch";
+import stitchStyles from "./purchase-detail-stitch.module.css";
 
 type Participant = {
   user_id: number;
@@ -74,26 +74,21 @@ export default function PurchaseDetailPage() {
     if (!Number.isInteger(purchaseId)) {
       setLoading(false);
       setError("Некорректная ссылка.");
-
       return undefined;
     }
 
     loadPurchase();
-
     return undefined;
   }, [purchaseId, loadPurchase]);
 
   const purchase = data?.purchase ?? null;
   const participants = data?.participants ?? [];
 
-  const isOrganizer =
-    session && purchase ? session.user.id === purchase.organizer_id : false;
+  const isOrganizer = session && purchase ? session.user.id === purchase.organizer_id : false;
 
   const myParticipant = useMemo(
     () =>
-      session
-        ? participants.find((participant) => participant.user_id === session.user.id)
-        : undefined,
+      session ? participants.find((participant) => participant.user_id === session.user.id) : undefined,
     [participants, session]
   );
 
@@ -102,7 +97,7 @@ export default function PurchaseDetailPage() {
       return 0;
     }
 
-    const price = Number.parseFloat(purchase.unit_price);
+    const price = Number.parseFloat(String(purchase.unit_price).replace(",", "."));
     const qtyTotal = purchase.total_quantity ?? 0;
 
     if (!Number.isFinite(price)) {
@@ -112,9 +107,7 @@ export default function PurchaseDetailPage() {
     return Math.round(price * qtyTotal * 100) / 100;
   }, [purchase]);
 
-  const nextStatus = purchase
-    ? getNextStatus(String(purchase.status))
-    : null;
+  const nextStatus = purchase ? getNextStatus(String(purchase.status)) : null;
 
   async function handleAdvanceStatus() {
     if (!nextStatus) {
@@ -163,7 +156,6 @@ export default function PurchaseDetailPage() {
 
     if (!session) {
       router.push("/");
-
       return;
     }
 
@@ -171,7 +163,6 @@ export default function PurchaseDetailPage() {
 
     if (!Number.isInteger(q) || q < 1) {
       setActionError("Укажите количество — целое число ≥ 1.");
-
       return;
     }
 
@@ -206,156 +197,70 @@ export default function PurchaseDetailPage() {
     }
   }
 
+  function handleShare() {
+    if (!purchase || typeof window === "undefined") {
+      return;
+    }
+    const url = window.location.href;
+    if (navigator.share) {
+      void navigator.share({ title: purchase.title, text: purchase.product_name, url }).catch(() => {
+        void navigator.clipboard.writeText(url);
+      });
+    } else {
+      void navigator.clipboard.writeText(url);
+    }
+  }
+
   const deadlinePassed = purchase ? new Date(purchase.deadline).getTime() < Date.now() : false;
 
+  if (loading) {
+    return (
+      <div className={`${tokens.root} ${homeLanding.landing} ${stitchStyles.pageWrap}`}>
+        <MarketingHeader />
+        <main className={stitchStyles.main}>
+          <p className={stitchStyles.muted}>Загрузка…</p>
+        </main>
+        <MarketingFooter />
+      </div>
+    );
+  }
+
+  if (error || !purchase) {
+    return (
+      <div className={`${tokens.root} ${homeLanding.landing} ${stitchStyles.pageWrap}`}>
+        <MarketingHeader />
+        <main className={stitchStyles.main}>
+          <div className={stitchStyles.errorBanner}>{error || "Не удалось открыть страницу."}</div>
+          <p style={{ marginTop: 16 }}>
+            <Link href="/catalog" className={stitchStyles.backLink}>
+              В каталог
+            </Link>
+          </p>
+        </main>
+        <MarketingFooter />
+      </div>
+    );
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Header />
-        <section className={`${styles.content} ${pageStyles.layout}`}>
-          <Link href="/purchases" className={pageStyles.backLink}>
-            ← ко всем закупкам
-          </Link>
-
-          {loading ? <div className={pageStyles.muted}>Загрузка…</div> : null}
-
-          {!loading && error ? <div className={pageStyles.errorBanner}>{error}</div> : null}
-
-          {!loading && !error && purchase ? (
-            <>
-              <div className={pageStyles.headerRow}>
-                <div>
-                  <h1 className={pageStyles.title}>{purchase.title}</h1>
-                  <p className={pageStyles.metaLine}>
-                    <span>{STATUS_LABELS[purchase.status as PurchaseStatus] ?? purchase.status}</span>
-                    {" · "}Организатор <strong>{purchase.organizer_name}</strong>
-                  </p>
-                </div>
-              </div>
-
-              <section className={pageStyles.detailsGrid}>
-                <article className={pageStyles.detailsCard}>
-                  <h3>Товар и цена</h3>
-                  <p className={pageStyles.bold}>{purchase.product_name}</p>
-                  {purchase.description ? (
-                    <p className={pageStyles.description}>{purchase.description}</p>
-                  ) : null}
-                  <p>
-                    Цена за единицу:{" "}
-                    <strong>{purchase.unit_price} ₽</strong>
-                  </p>
-                  <p>
-                    Мин. участников: <strong>{purchase.min_participants}</strong>
-                  </p>
-                  <p>
-                    Сбор заявок до:{" "}
-                    <strong>
-                      {new Date(purchase.deadline).toLocaleString("ru-RU")}
-                    </strong>
-                  </p>
-                  {deadlinePassed && purchase.status === "collecting" ? (
-                    <p className={pageStyles.warning}>Срок сбора истёк — новые заявки недоступны.</p>
-                  ) : null}
-                  {purchase.city ? <p>Город: {purchase.city}</p> : null}
-                  {purchase.pickup_address ? <p>Выдача: {purchase.pickup_address}</p> : null}
-                </article>
-
-                <aside className={pageStyles.detailsCard}>
-                  <h3>Итоги</h3>
-                  <p>
-                    Участников: <strong>{purchase.participant_count ?? 0}</strong>
-                  </p>
-                  <p>
-                    Заявлено шт.: <strong>{purchase.total_quantity ?? 0}</strong>
-                  </p>
-                  <p>
-                    Сумма заказов: <strong>{totalSum} ₽</strong>
-                  </p>
-
-                  {isOrganizer && purchase.status !== "cancelled" && purchase.status !== "completed" ? (
-                    <div className={pageStyles.organizerActions}>
-                      {nextStatus ? (
-                        <button
-                          type="button"
-                          className={pageStyles.primaryButton}
-                          disabled={pending}
-                          onClick={handleAdvanceStatus}
-                        >
-                          Далее: {STATUS_LABELS[nextStatus]}
-                        </button>
-                      ) : null}
-                      {purchase.status !== "cancelled" ? (
-                        <button
-                          type="button"
-                          className={pageStyles.dangerButton}
-                          disabled={pending}
-                          onClick={handleCancel}
-                        >
-                          Отменить закупку
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  {!isOrganizer && session && purchase.status === "collecting" && !deadlinePassed ? (
-                    <form className={pageStyles.joinForm} onSubmit={handleJoin}>
-                      <label>
-                        Количество
-                        <input
-                          type="number"
-                          min={1}
-                          value={qty}
-                          onChange={(e) => setQty(e.target.value)}
-                        />
-                      </label>
-                      <button type="submit" className={pageStyles.primaryButton} disabled={pending}>
-                        {myParticipant ? "Обновить заявку" : "Присоединиться"}
-                      </button>
-                      {myParticipant ? (
-                        <button
-                          type="button"
-                          className={pageStyles.secondaryButton}
-                          disabled={pending}
-                          onClick={handleLeave}
-                        >
-                          Выйти из закупки
-                        </button>
-                      ) : null}
-                    </form>
-                  ) : null}
-
-                  {!session && purchase.status === "collecting" && !deadlinePassed ? (
-                    <p className={pageStyles.muted}>
-                      <Link href="/" className={pageStyles.inlineLink}>
-                        Войдите
-                      </Link>
-                      , чтобы присоединиться к закупке.
-                    </p>
-                  ) : null}
-                </aside>
-              </section>
-
-              {actionError ? <div className={pageStyles.errorBanner}>{actionError}</div> : null}
-
-              <section className={pageStyles.participantsSection}>
-                <h2>Участники</h2>
-                {participants.length === 0 ? (
-                  <p className={pageStyles.muted}>Пока никто не присоединился.</p>
-                ) : (
-                  <ul className={pageStyles.participantList}>
-                    {participants.map((participant) => (
-                      <li key={participant.user_id}>
-                        <span>{participant.user_name}</span>
-                        <span className={pageStyles.qty}>× {participant.quantity}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </>
-          ) : null}
-        </section>
-      </main>
-    </div>
+    <PurchaseDetailStitch
+      purchase={purchase}
+      participants={participants}
+      session={session}
+      isOrganizer={Boolean(isOrganizer)}
+      myParticipant={myParticipant}
+      qty={qty}
+      setQty={setQty}
+      pending={pending}
+      actionError={actionError}
+      deadlinePassed={deadlinePassed}
+      nextStatus={nextStatus}
+      totalSum={totalSum}
+      onJoin={handleJoin}
+      onLeave={handleLeave}
+      onAdvanceStatus={handleAdvanceStatus}
+      onCancel={handleCancel}
+      onShare={handleShare}
+    />
   );
 }

@@ -1,0 +1,282 @@
+.main {
+  background: #f8f9ff;
+  padding-bottom: 48px;
+}
+
+.layout {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 40px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  .layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 40px 48px 0;
+  }
+}
+
+.sidebar {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    width: 256px;
+  }
+}
+
+.sidebarSticky {
+  position: sticky;
+  top: 112px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.sidebarTitle {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0b1c30;
+}
+
+.checkboxList,
+.radioList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #3d4947;
+  transition: color 0.2s ease;
+}
+
+.checkRow:hover {
+  color: #00685f;
+}
+
+.checkRow input {
+  width: 20px;
+  height: 20px;
+  accent-color: #00685f;
+}
+
+.range {
+  width: 100%;
+  height: 8px;
+  accent-color: #00685f;
+  cursor: pointer;
+}
+
+.rangeLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6d7a77;
+}
+
+.applyBtn {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #008378;
+  color: #f4fffc;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+
+.applyBtn:hover {
+  filter: brightness(1.05);
+}
+
+.applyBtn:active {
+  transform: scale(0.98);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.contentHead {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+@media (min-width: 640px) {
+  .contentHead {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #0b1c30;
+}
+
+.subtitle {
+  margin: 0;
+  color: #3d4947;
+  line-height: 1.6;
+}
+
+.sortRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6d7a77;
+  border: 1px solid #bcc9c6;
+  border-radius: 8px;
+  padding: 8px 16px;
+  background: #e5eeff;
+}
+
+.sortSelect {
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  color: #0b1c30;
+  cursor: pointer;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.error {
+  color: #ba1a1a;
+  margin-bottom: 16px;
+}
+
+.empty {
+  color: #3d4947;
+  margin-bottom: 24px;
+}
+
+.empty a {
+  color: #00685f;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.pagination {
+  margin-top: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pageStatus {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #3d4947;
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #bcc9c6;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #e5eeff;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageNum,
+.pageNumActive {
+  min-width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pageNum {
+  background: transparent;
+}
+
+.pageNum:hover {
+  background: #e5eeff;
+}
+
+.pageNumActive {
+  background: #00685f;
+  color: #ffffff;
+}
+
+.pageEllipsis {
+  padding: 0 8px;
+  color: #6d7a77;
+}
+
+.fallback {
+  min-height: 40vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3d4947;
+  background: #f8f9ff;
+}

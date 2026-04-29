@@ -10,6 +10,7 @@ function createToken(user) {
     {
       id: user.id,
       email: user.email,
+      is_admin: Boolean(user.is_admin),
     },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
@@ -44,7 +45,7 @@ router.post("/register", async (req, res) => {
       `
         INSERT INTO users (name, email, password_hash)
         VALUES ($1, $2, $3)
-        RETURNING id, name, email, created_at
+        RETURNING id, name, email, created_at, is_admin
       `,
       [name.trim(), normalizedEmail, passwordHash]
     );
@@ -79,7 +80,7 @@ router.post("/login", async (req, res) => {
 
     const result = await pool.query(
       `
-        SELECT id, name, email, password_hash, created_at
+        SELECT id, name, email, password_hash, created_at, is_admin
         FROM users
         WHERE email = $1
       `,
@@ -112,6 +113,7 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
         created_at: user.created_at,
+        is_admin: Boolean(user.is_admin),
       },
     });
   } catch (error) {

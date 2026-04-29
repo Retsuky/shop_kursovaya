@@ -26,8 +26,109 @@ function mapPurchase(row) {
     participant_count: row.participant_count != null ? Number(row.participant_count) : undefined,
     total_quantity:
       row.total_quantity != null ? Number(row.total_quantity) : undefined,
+    category: row.category != null ? String(row.category) : "",
+    image_url: row.image_url != null ? String(row.image_url) : "",
+    retail_price: row.retail_price != null ? String(row.retail_price) : null,
   };
 }
+
+router.get("/catalog", async (req, res) => {
+  const limit = Math.min(48, Math.max(1, parseInt(String(req.query.limit), 10) || 12));
+  const offset = Math.max(0, parseInt(String(req.query.offset), 10) || 0);
+  const maxPriceRaw = req.query.max_price;
+  const maxPrice =
+    maxPriceRaw != null && String(maxPriceRaw).trim() !== "" ? Number(maxPriceRaw) : null;
+  const sortRaw = typeof req.query.sort === "string" ? req.query.sort : "popular";
+  const sort = ["popular", "newest", "closing"].includes(sortRaw) ? sortRaw : "popular";
+  const dealRaw = typeof req.query.deal === "string" ? req.query.deal : "open";
+  const deal = ["open", "active", "almost", "closed", "all"].includes(dealRaw) ? dealRaw : "open";
+
+  const categories =
+    typeof req.query.categories === "string" && req.query.categories.trim()
+      ? req.query.categories
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+  const params = [];
+  const where = ["p.status <> 'cancelled'"];
+
+  if (Number.isFinite(maxPrice)) {
+    params.push(maxPrice);
+    where.push(`p.unit_price <= $${params.length}`);
+  }
+
+  if (categories.length) {
+    params.push(categories);
+    where.push(`p.category = ANY($${params.length}::varchar[])`);
+  }
+
+  if (deal === "closed") {
+    where.push(`p.status IN ('payment','supplier_order','delivery','completed')`);
+  } else if (deal === "all") {
+    /* только статус <> cancelled уже есть */
+  } else {
+    where.push(`p.status = 'collecting'`);
+    where.push(`p.deadline > NOW()`);
+    if (deal === "active") {
+      where.push(`(
+        (SELECT COUNT(DISTINCT pp.user_id)::numeric FROM purchase_participants pp WHERE pp.purchase_id = p.id)
+        < CEIL(GREATEST(p.min_participants, 1) * 0.9)::numeric
+      )`);
+    } else if (deal === "almost") {
+      where.push(`(
+        (SELECT COUNT(DISTINCT pp.user_id)::numeric FROM purchase_participants pp WHERE pp.purchase_id = p.id)
+        >= CEIL(GREATEST(p.min_participants, 1) * 0.9)::numeric
+      )`);
+    }
+  }
+
+  const whereSql = where.join(" AND ");
+
+  let orderBySql = "participant_count DESC NULLS LAST, p.created_at DESC";
+  if (sort === "newest") {
+    orderBySql = "p.created_at DESC";
+  } else if (sort === "closing") {
+    orderBySql = "p.deadline ASC";
+  }
+
+  try {
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM purchases p WHERE ${whereSql}`,
+      params
+    );
+
+    const total = countResult.rows[0]?.c ?? 0;
+
+    const dataParams = [...params, limit, offset];
+    const limIdx = params.length + 1;
+    const offIdx = params.length + 2;
+
+    const dataResult = await pool.query(
+      `
+        SELECT
+          p.*,
+          u.name AS organizer_name,
+          (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+        FROM purchases p
+        INNER JOIN users u ON u.id = p.organizer_id
+        WHERE ${whereSql}
+        ORDER BY ${orderBySql}
+        LIMIT $${limIdx} OFFSET $${offIdx}
+      `,
+      dataParams
+    );
+
+    const items = dataResult.rows.map(mapPurchase);
+
+    return res.status(200).json({ items, total, limit, offset });
+  } catch (error) {
+    console.error("Catalog:", error);
+    return res.status(500).json({ message: "Не удалось загрузить каталог." });
+  }
+});
 
 router.get("/", async (req, res) => {
   const status = typeof req.query.status === "string" ? req.query.status : null;
@@ -175,6 +276,9 @@ router.post("/", requireAuth, async (req, res) => {
     deadline,
     city,
     pickup_address,
+    category,
+    image_url,
+    retail_price,
   } = req.body;
 
   if (
@@ -207,14 +311,26 @@ router.post("/", requireAuth, async (req, res) => {
     return res.status(400).json({ message: "Некорректная дата сбора." });
   }
 
+  let retailNum = null;
+  if (retail_price != null && String(retail_price).trim() !== "") {
+    retailNum = Number(retail_price);
+    if (!Number.isFinite(retailNum) || retailNum < 0) {
+      return res.status(400).json({ message: "Некорректная розничная цена." });
+    }
+  }
+
+  const categoryStr = category != null ? String(category).trim() : "";
+  const imageStr = image_url != null ? String(image_url).trim() : "";
+
   try {
     const result = await pool.query(
       `
         INSERT INTO purchases (
           organizer_id, title, description, product_name, unit_price,
-          min_participants, deadline, city, pickup_address, status
+          min_participants, deadline, city, pickup_address, status,
+          category, image_url, retail_price
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'collecting')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'collecting', $10, $11, $12)
         RETURNING *
       `,
       [
@@ -227,6 +343,9 @@ router.post("/", requireAuth, async (req, res) => {
         deadlineDate,
         city != null ? String(city).trim() : "",
         pickup_address != null ? String(pickup_address).trim() : "",
+        categoryStr,
+        imageStr,
+        retailNum,
       ]
     );
 

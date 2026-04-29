@@ -11,7 +11,11 @@ function requireAuth(req, res, next) {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: payload.id, email: payload.email };
+    req.user = {
+      id: payload.id,
+      email: payload.email,
+      is_admin: Boolean(payload.is_admin),
+    };
     return next();
   } catch {
     return res.status(401).json({ message: "Недействительный или просроченный токен." });

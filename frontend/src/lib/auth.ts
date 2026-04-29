@@ -3,6 +3,8 @@ export type AuthUser = {
   name: string;
   email: string;
   created_at: string;
+  /** С бэкенда после входа; в старых сессиях может отсутствовать */
+  is_admin?: boolean;
 };
 
 export type AuthSession = {

@@ -41,6 +41,9 @@ export default function NewPurchasePage() {
   const [deadline, setDeadline] = useState(defaultDeadline());
   const [city, setCity] = useState("");
   const [pickup_address, setPickupAddress] = useState("");
+  const [category, setCategory] = useState("");
+  const [image_url, setImageUrl] = useState("");
+  const [retail_price, setRetailPrice] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -70,6 +73,10 @@ export default function NewPurchasePage() {
         deadline: new Date(deadline).toISOString(),
         city,
         pickup_address,
+        category: category.trim() || undefined,
+        image_url: image_url.trim() || undefined,
+        retail_price:
+          retail_price.trim() === "" ? undefined : Number(String(retail_price).replace(",", ".")),
       });
 
       router.push(`/purchases/${res.data.id}`);
@@ -93,8 +100,8 @@ export default function NewPurchasePage() {
       <main className={styles.main}>
         <Header />
         <section className={`${styles.content} ${pageStyles.layout}`}>
-          <Link href="/purchases" className={pageStyles.backLink}>
-            ← ко всем закупкам
+          <Link href="/catalog" className={pageStyles.backLink}>
+            ← в каталог
           </Link>
           <h1 className={pageStyles.title}>Новая закупка</h1>
           <p className={pageStyles.lead}>Заполните данные — участники смогут присоединиться и указать объём заказа.</p>
@@ -127,6 +134,43 @@ export default function NewPurchasePage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Условия, ссылка на товар, требования к качеству"
+              />
+            </label>
+
+            <div className={pageStyles.row}>
+              <label className={pageStyles.field}>
+                Категория (для каталога)
+                <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="">— не указана —</option>
+                  <option value="Электроника">Электроника</option>
+                  <option value="Дом и уют">Дом и уют</option>
+                  <option value="Одежда и обувь">Одежда и обувь</option>
+                  <option value="Мода">Мода</option>
+                  <option value="Фитнес">Фитнес</option>
+                  <option value="Аксессуары">Аксессуары</option>
+                  <option value="Дом и кухня">Дом и кухня</option>
+                </select>
+              </label>
+              <label className={pageStyles.field}>
+                Розничная цена, ₽ (зачёркнутая)
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={retail_price}
+                  onChange={(e) => setRetailPrice(e.target.value)}
+                  placeholder="Необязательно"
+                />
+              </label>
+            </div>
+
+            <label className={`${pageStyles.field} ${pageStyles.fieldWide}`}>
+              URL картинки (для каталога)
+              <input
+                type="text"
+                value={image_url}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://…"
               />
             </label>
 

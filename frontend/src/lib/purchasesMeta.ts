@@ -25,7 +25,7 @@ export const STATUS_LABELS: Record<PurchaseStatus, string> = {
 };
 
 export function getNextStatus(current: string): PurchaseStatus | null {
-  const i = STATUS_ORDER.indexOf(current as PurchaseStatus);
+  const i = STATUS_ORDER.indexOf(current as (typeof STATUS_ORDER)[number]);
 
   if (i === -1 || i >= STATUS_ORDER.length - 1) {
     return null;
@@ -52,4 +52,14 @@ export type Purchase = {
   participant_count?: number;
   total_quantity?: number;
   my_quantity?: number;
+  category?: string;
+  image_url?: string;
+  retail_price?: string | null;
+};
+
+export type CatalogResponse = {
+  items: Purchase[];
+  total: number;
+  limit: number;
+  offset: number;
 };

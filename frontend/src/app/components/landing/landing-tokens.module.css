@@ -1,0 +1,25 @@
+/* Design tokens from stitch_/collective_commerce_system — scoped via composes/parent */
+.root {
+  --cb-background: #f8f9ff;
+  --cb-on-background: #0b1c30;
+  --cb-on-surface: #0b1c30;
+  --cb-on-surface-variant: #3d4947;
+  --cb-primary: #00685f;
+  --cb-on-primary: #ffffff;
+  --cb-primary-container: #008378;
+  --cb-on-primary-container: #f4fffc;
+  --cb-primary-fixed-dim: #6bd8cb;
+  --cb-secondary-container: #dc2c4f;
+  --cb-secondary: #b90538;
+  --cb-secondary-fixed: #ffdadb;
+  --cb-tertiary: #735c00;
+  --cb-tertiary-container: #cea700;
+  --cb-on-tertiary-container: #4e3e00;
+  --cb-surface-container-low: #eff4ff;
+  --cb-surface-container: #e5eeff;
+  --cb-surface-container-highest: #d3e4fe;
+  --cb-white: #ffffff;
+  --cb-shadow-teal: 0 4px 20px -4px rgba(13, 148, 136, 0.1);
+  --cb-shadow-card: 0 4px 20px -4px rgba(13, 148, 136, 0.05);
+  --cb-font: var(--font-plus-jakarta, "Plus Jakarta Sans"), system-ui, sans-serif;
+}

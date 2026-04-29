@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   clearAuthSession,
   getAuthSession,
@@ -13,7 +13,6 @@ import styles from "./header.module.css";
 
 export default function Header() {
   const router = useRouter();
-  const pathname = usePathname();
   const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
@@ -37,12 +36,6 @@ export default function Header() {
 
   const handleLogoutClick = () => {
     clearAuthSession();
-
-    if (pathname === "/account") {
-      router.push("/");
-      return;
-    }
-
     router.refresh();
   };
 
@@ -61,8 +54,11 @@ export default function Header() {
           <Link href="/home" className={styles.inlineNavLink}>
             Главная
           </Link>
-          <Link href="/purchases" className={styles.inlineNavLink}>
-            Закупки
+          <Link href="/catalog" className={styles.inlineNavLink}>
+            Каталог
+          </Link>
+          <Link href="/purchases/new" className={styles.inlineNavLink}>
+            Новая закупка
           </Link>
         </nav>
       </div>
@@ -70,8 +66,13 @@ export default function Header() {
       <div className={styles.actions}>
         {session ? (
           <>
-            <button type="button" className={styles.account} onClick={handleAccountClick}>
-              Аккаунт: {session.user.name}
+            <button
+              type="button"
+              className={styles.account}
+              onClick={handleAccountClick}
+              title="Личный кабинет"
+            >
+              {session.user.name}
             </button>
             <button type="button" className={styles.logout} onClick={handleLogoutClick}>
               Выйти

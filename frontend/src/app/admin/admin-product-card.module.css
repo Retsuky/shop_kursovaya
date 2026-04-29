@@ -1,0 +1,62 @@
+.adminCta {
+  margin-top: auto;
+}
+
+.statusSelect {
+  width: 100%;
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 104, 95, 0.25);
+  background: #fff;
+  color: var(--cb-on-surface);
+  font-weight: 600;
+}
+
+.btnSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--cb-primary);
+  background: transparent;
+  color: var(--cb-primary);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.btnSecondary:hover {
+  background: rgba(0, 104, 95, 0.08);
+}
+
+.btnDangerOutline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(220, 44, 79, 0.35);
+  background: transparent;
+  color: var(--cb-secondary-container);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.btnDangerOutline:hover {
+  background: rgba(220, 44, 79, 0.08);
+}
+
+.adminId {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
