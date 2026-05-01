@@ -41,11 +41,7 @@ export default function CartView() {
     if (lines.length === 0) {
       return;
     }
-    if (lines.length === 1) {
-      router.push(`/purchases/${lines[0].purchaseId}`);
-      return;
-    }
-    router.push(`/purchases/${lines[0].purchaseId}`);
+    router.push("/checkout");
   };
 
   return (

@@ -229,10 +229,22 @@ export default function AdminPanel() {
           <>
             <div className={styles.toolbar}>
               <h2 className={styles.sectionTitle}>Товары в каталоге</h2>
-              <Link href="/admin/new" className={styles.btnPrimary}>
-                + Добавить товар
-              </Link>
+              <div className={styles.toolbarActions}>
+                <Link href="/catalog" className={styles.btnGhost}>
+                  Витрина (открытые)
+                </Link>
+                <Link href="/catalog?deal=all" className={styles.btnGhost}>
+                  Витрина (все сделки)
+                </Link>
+                <Link href="/admin/new" className={styles.btnPrimary}>
+                  + Добавить товар
+                </Link>
+              </div>
             </div>
+            <p className={styles.muted} style={{ marginTop: -12, marginBottom: 20 }}>
+              На главной витрине по умолчанию только «Сбор заявок» и срок в будущем. Статусы вроде «Оплата» или
+              «Завершена» смотрите в каталоге с фильтром «Все» или «Выкуплено».
+            </p>
 
             {loading ? (
               <p className={styles.muted}>Загрузка…</p>

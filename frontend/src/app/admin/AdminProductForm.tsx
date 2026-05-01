@@ -174,7 +174,7 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
           form.retail_price.trim() === ""
             ? null
             : Number(String(form.retail_price).replace(",", ".")),
-        status: form.status,
+        status: mode === "new" ? ("collecting" as PurchaseStatus) : form.status,
       };
 
       if (mode === "edit" && purchaseId != null) {
@@ -213,8 +213,9 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
           <p className={styles.badge}>{mode === "new" ? "Новая позиция" : "Редактирование"}</p>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.subtitle}>
-            Поля совпадают с карточкой в общем каталоге: после сохранения товар появится на витрине (если статус и срок
-            это допускают).
+            В разделе каталога «Открытые» показываются только сделки со статусом «Сбор заявок» и с датой окончания сбора
+            в будущем. Новая позиция всегда создаётся в статусе «Сбор заявок»; этапы оплаты и завершения меняйте при
+            редактировании.
           </p>
         </header>
 
@@ -241,19 +242,29 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                   ))}
                 </select>
               </label>
-              <label className={styles.field}>
-                Статус
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as PurchaseStatus }))}
-                >
-                  {ALL_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {STATUS_LABELS[s]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {mode === "edit" ? (
+                <label className={styles.field}>
+                  Статус заказа
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as PurchaseStatus }))}
+                  >
+                    {ALL_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <div className={`${styles.field} ${styles.fieldFull}`}>
+                  <span>Статус</span>
+                  <p className={styles.formNote}>
+                    Будет установлен «{STATUS_LABELS.collecting}» — иначе карточка не попадёт в раздел «Открытые» на
+                    витрине.
+                  </p>
+                </div>
+              )}
               <label className={styles.field}>
                 Название в каталоге
                 <input
@@ -308,6 +319,10 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
               <label className={styles.field}>
                 Категория
                 <input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
+                <span className={styles.fieldHint}>
+                  Если в каталоге включены фильтры по категориям, пустое поле скроет товар из выборки — укажите, например,
+                  «Электроника».
+                </span>
               </label>
               <label className={styles.fieldFull}>
                 URL изображения
@@ -342,8 +357,11 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                 <Link href="/admin" className={styles.btnGhost}>
                   Отмена
                 </Link>
+                <Link href="/catalog?deal=all" className={styles.btnGhost}>
+                  Каталог (все сделки)
+                </Link>
                 <Link href="/catalog" className={styles.btnGhost}>
-                  Публичный каталог
+                  Каталог (только открытые)
                 </Link>
               </div>
             </form>

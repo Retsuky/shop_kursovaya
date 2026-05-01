@@ -234,8 +234,10 @@ export default function CatalogView() {
             {error ? <p className={styles.error}>{error}</p> : null}
 
             {!loading && !error && items.length === 0 ? (
-              <p className={styles.empty}>Попробуйте смягчить фильтры или посмотрите{" "}
-                <Link href="/catalog">каталог</Link>.
+              <p className={styles.empty}>
+                Попробуйте смягчить фильтры. Новые товары от администратора с этапами «Оплата» / «Завершена» не попадают
+                в раздел «Открытые» — выберите в боковой панели «Все» или «Выкуплено», затем «Применить фильтры».{" "}
+                <Link href="/catalog?deal=all">Показать все сделки</Link>.
               </p>
             ) : null}
 
