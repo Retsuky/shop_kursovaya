@@ -15,7 +15,10 @@ import {
   formatRub,
   formatTimeLeft,
   isAlmostFull,
+  purchasePricePresentation,
 } from "../../../lib/catalogDisplay";
+import ParticipantAvatar from "../../../lib/ParticipantAvatar";
+import PurchaseDiscussion from "./PurchaseDiscussion";
 import type { Purchase, PurchaseStatus } from "../../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../../lib/purchasesMeta";
 import styles from "./purchase-detail-stitch.module.css";
@@ -24,6 +27,9 @@ export type StitchParticipant = {
   user_id: number;
   quantity: number;
   user_name: string;
+  email?: string;
+  avatar_url?: string;
+  joined_at?: string;
 };
 
 export type PurchaseDetailStitchProps = {
@@ -46,9 +52,6 @@ export type PurchaseDetailStitchProps = {
   onShare: () => void;
 };
 
-const FALLBACK_IMG =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBinnOgENAwDx3Cjp4dVQm-QPyT4K0FmppHETJ1UnhzbQsh62rTK2YvmP_W003pxfxsduHErVaUoTQJDB0OQI-TN0IaGqKWAwigtEK0CAWzyhAZcmaZLKT4GKKO9jN_HVFJRkLvJDXEF0a4FvCwVcaSQIDXiotXhGcn1k40KUYuV1SpsP7OQc7Dcue_o7XY-bZziQ2HKMJeTsOlzM7e7HExDDB6RH8HNaEV-NwTL0SYEZpkEOJf_r5ztszeFh_qZxDqjTfmC_IgDK0";
-
 export default function PurchaseDetailStitch({
   purchase,
   participants,
@@ -70,7 +73,8 @@ export default function PurchaseDetailStitch({
 }: PurchaseDetailStitchProps) {
   const [tab, setTab] = useState<"about" | "participants">("about");
 
-  const img = purchase.image_url?.trim() || FALLBACK_IMG;
+  const imageUrl = purchase.image_url?.trim() || "";
+  const pricePres = purchasePricePresentation(purchase);
   const { percent, participantsLabel } = catalogProgress(purchase);
   const disc = discountPercent(purchase);
   const almost = isAlmostFull(purchase);
@@ -79,8 +83,13 @@ export default function PurchaseDetailStitch({
   const needPeople = Math.max(0, m - c);
   const collecting = purchase.status === "collecting";
   const showJoinUi = !isOrganizer && collecting && !deadlinePassed;
-  const avatarParticipants = participants.slice(0, 3);
-  const extraAv = Math.max(0, c - 3);
+  const recentForAvatars = [...participants]
+    .filter((p) => p.joined_at)
+    .sort((a, b) => new Date(b.joined_at!).getTime() - new Date(a.joined_at!).getTime())
+    .slice(0, 3)
+    .reverse();
+  const avatarParticipants = recentForAvatars.length > 0 ? recentForAvatars : participants.slice(0, 3);
+  const extraAv = Math.max(0, c - avatarParticipants.length);
 
   const categoryLabel = purchase.category?.trim() || "Групповая сделка";
 
@@ -100,7 +109,18 @@ export default function PurchaseDetailStitch({
         <div className={styles.grid}>
           <div className={styles.gallery}>
             <div className={styles.heroImgWrap}>
-              <Image src={img} alt={purchase.title} fill className={styles.heroImg} sizes="(max-width: 1024px) 100vw, 58vw" unoptimized />
+              {imageUrl ? (
+                <Image
+                  src={imageUrl}
+                  alt={purchase.title}
+                  fill
+                  className={styles.heroImg}
+                  sizes="(max-width: 1024px) 100vw, 58vw"
+                  unoptimized
+                />
+              ) : (
+                <div className={styles.heroImgPlaceholder} role="img" aria-label={purchase.title} />
+              )}
             </div>
           </div>
 
@@ -127,13 +147,13 @@ export default function PurchaseDetailStitch({
 
             <div className={styles.priceBox}>
               <div className={styles.priceRow}>
-                <span className={styles.priceMain}>{formatRub(purchase.unit_price)}</span>
-                {purchase.retail_price ? (
-                  <span className={styles.priceOld}>{formatRub(purchase.retail_price)}</span>
+                <span className={styles.priceMain}>{pricePres.mainPrice}</span>
+                {pricePres.comparePrice ? (
+                  <span className={styles.priceOld}>{pricePres.comparePrice}</span>
                 ) : null}
                 {disc != null ? <span className={styles.discBadge}>СКИДКА {disc}%</span> : null}
               </div>
-              <p className={styles.priceSub}>Групповая цена при {m} участниках</p>
+              <p className={styles.priceSub}>{pricePres.caption}</p>
             </div>
 
             <div className={styles.progressSection}>
@@ -163,14 +183,15 @@ export default function PurchaseDetailStitch({
                 <div className={styles.avatarRow}>
                   <div className={styles.avatarStack}>
                     {avatarParticipants.map((p) => (
-                      <Image
+                      <ParticipantAvatar
                         key={p.user_id}
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(p.user_name)}`}
-                        alt=""
-                        width={34}
-                        height={34}
+                        participant={{
+                          user_name: p.user_name,
+                          email: p.email,
+                          avatar_url: p.avatar_url,
+                        }}
+                        size={34}
                         className={styles.avatar}
-                        unoptimized
                       />
                     ))}
                     {extraAv > 0 ? <span className={styles.avatarMore}>+{extraAv}</span> : null}
@@ -313,8 +334,16 @@ export default function PurchaseDetailStitch({
                     <div className={styles.specValue}>{purchase.product_name}</div>
                     <div className={styles.specLabel}>Категория</div>
                     <div className={styles.specValue}>{categoryLabel}</div>
-                    <div className={styles.specLabel}>Цена за единицу</div>
+                    <div className={styles.specLabel}>Групповая цена</div>
                     <div className={styles.specValue}>{formatRub(purchase.unit_price)}</div>
+                    <div className={styles.specLabel}>Розница</div>
+                    <div className={styles.specValue}>
+                      {purchase.retail_price?.toString().trim()
+                        ? formatRub(purchase.retail_price)
+                        : "—"}
+                    </div>
+                    <div className={styles.specLabel}>Цена для участников сейчас</div>
+                    <div className={styles.specValue}>{pricePres.mainPrice}</div>
                     <div className={styles.specLabel}>Мин. участников</div>
                     <div className={styles.specValue}>{m}</div>
                     <div className={styles.specLabel}>Сбор заявок до</div>
@@ -329,9 +358,13 @@ export default function PurchaseDetailStitch({
                   <div className={styles.discussCard}>
                     <h3 className={styles.discussTitle}>Обсуждение</h3>
                     <p className={styles.discussMuted}>
-                      Вопросы к организатору и обсуждение товара появятся здесь в следующих версиях. Пока свяжитесь с
-                      организатором через контакты в карточке закупки.
+                      Вопросы организатору и участникам. Сообщения видны всем, кто открыл страницу закупки.
                     </p>
+                    <PurchaseDiscussion
+                      purchaseId={purchase.id}
+                      session={session}
+                      readOnly={purchase.status === "cancelled"}
+                    />
                   </div>
                 </>
               ) : (
@@ -343,7 +376,18 @@ export default function PurchaseDetailStitch({
                     <ul className={styles.participantList}>
                       {participants.map((p) => (
                         <li key={p.user_id}>
-                          <span>{p.user_name}</span>
+                          <div className={styles.participantRow}>
+                            <ParticipantAvatar
+                              participant={{
+                                user_name: p.user_name,
+                                email: p.email,
+                                avatar_url: p.avatar_url,
+                              }}
+                              size={28}
+                              className={styles.participantAvatarImg}
+                            />
+                            <span className={styles.participantName}>{p.user_name}</span>
+                          </div>
                           <span className={styles.qty}>× {p.quantity}</span>
                         </li>
                       ))}

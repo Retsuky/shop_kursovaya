@@ -69,6 +69,12 @@
   object-fit: cover;
 }
 
+.heroImgPlaceholder {
+  position: absolute;
+  inset: 0;
+  background: #dfe3e8;
+}
+
 .side {
   display: flex;
   flex-direction: column;
@@ -548,6 +554,26 @@ a.btnCoral {
   background: #fff;
   border: 1px solid #f1f5f9;
   font-size: 0.9375rem;
+}
+
+.participantRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.participantAvatarImg {
+  flex-shrink: 0;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.participantName {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .qty {

@@ -3,11 +3,12 @@
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "../../components/header/Header";
 import styles from "../../page.module.css";
 import pageStyles from "./new.module.css";
 import api from "../../../lib/api";
+import { uploadProductImage } from "../../../lib/uploadProductImage";
 import { getAuthSession } from "../../../lib/auth";
 import type { Purchase } from "../../../lib/purchasesMeta";
 
@@ -45,6 +46,8 @@ export default function NewPurchasePage() {
   const [image_url, setImageUrl] = useState("");
   const [retail_price, setRetailPrice] = useState("");
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -165,13 +168,60 @@ export default function NewPurchasePage() {
             </div>
 
             <label className={`${pageStyles.field} ${pageStyles.fieldWide}`}>
-              URL картинки (для каталога)
+              Фото для каталога (необязательно)
               <input
-                type="text"
-                value={image_url}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://…"
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
+                className={pageStyles.fileHidden}
+                tabIndex={-1}
+                aria-hidden
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) {
+                    return;
+                  }
+                  setError("");
+                  setUploadBusy(true);
+                  try {
+                    const url = await uploadProductImage(file);
+                    setImageUrl(url);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Не удалось загрузить изображение.");
+                  } finally {
+                    setUploadBusy(false);
+                  }
+                }}
               />
+              <div className={pageStyles.imageActions}>
+                <button
+                  type="button"
+                  className={pageStyles.filePick}
+                  disabled={uploadBusy || submitting}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploadBusy ? "Загрузка…" : image_url.trim() ? "Заменить файл…" : "Выбрать файл…"}
+                </button>
+                {image_url.trim() ? (
+                  <button
+                    type="button"
+                    className={pageStyles.fileClear}
+                    disabled={uploadBusy || submitting}
+                    onClick={() => setImageUrl("")}
+                  >
+                    Убрать
+                  </button>
+                ) : null}
+              </div>
+              {image_url.trim() ? (
+                <div className={pageStyles.previewWrap}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image_url.trim()} alt="" className={pageStyles.previewImg} />
+                </div>
+              ) : (
+                <span className={pageStyles.fieldNote}>JPEG, PNG, GIF или WebP, до 5 МБ.</span>
+              )}
             </label>
 
             <div className={pageStyles.row}>

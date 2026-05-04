@@ -96,6 +96,12 @@
   object-fit: cover;
 }
 
+.thumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #dfe3e8;
+}
+
 .lineBody {
   min-width: 0;
 }

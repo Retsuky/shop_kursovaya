@@ -5,6 +5,8 @@ export type AuthUser = {
   created_at: string;
   /** С бэкенда после входа; в старых сессиях может отсутствовать */
   is_admin?: boolean;
+  /** URL загруженного фото или пусто — тогда условная иконка Dicebear */
+  avatar_url?: string;
 };
 
 export type AuthSession = {

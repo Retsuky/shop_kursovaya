@@ -3,12 +3,13 @@
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MarketingFooter from "../components/landing/MarketingFooter";
 import MarketingHeader from "../components/landing/MarketingHeader";
 import tokens from "../components/landing/landing-tokens.module.css";
 import homeLanding from "../home/home-landing.module.css";
 import api from "../../lib/api";
+import { uploadProductImage } from "../../lib/uploadProductImage";
 import { getAuthSession, subscribeToAuthChanges } from "../../lib/auth";
 import type { Purchase, PurchaseStatus } from "../../lib/purchasesMeta";
 import { STATUS_LABELS, STATUS_ORDER } from "../../lib/purchasesMeta";
@@ -72,6 +73,8 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
   const [form, setForm] = useState(() => emptyForm(""));
 
   const syncAccess = useCallback(() => {
@@ -325,12 +328,60 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                 </span>
               </label>
               <label className={styles.fieldFull}>
-                URL изображения
+                Изображение товара
                 <input
-                  value={form.image_url}
-                  onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
-                  placeholder="https://…"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
+                  className={styles.visuallyHidden}
+                  tabIndex={-1}
+                  aria-hidden
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) {
+                      return;
+                    }
+                    setError("");
+                    setUploadBusy(true);
+                    try {
+                      const url = await uploadProductImage(file);
+                      setForm((f) => ({ ...f, image_url: url }));
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Не удалось загрузить изображение.");
+                    } finally {
+                      setUploadBusy(false);
+                    }
+                  }}
                 />
+                <div className={styles.imageUploadRow}>
+                  <button
+                    type="button"
+                    className={`${styles.btnGhost} ${styles.imagePickBtn}`}
+                    disabled={uploadBusy || saving}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploadBusy ? "Загрузка…" : form.image_url.trim() ? "Заменить файл…" : "Выбрать файл…"}
+                  </button>
+                  {form.image_url.trim() ? (
+                    <button
+                      type="button"
+                      className={styles.imageUploadClear}
+                      disabled={uploadBusy || saving}
+                      onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+                    >
+                      Убрать
+                    </button>
+                  ) : null}
+                </div>
+                {form.image_url.trim() ? (
+                  <div className={styles.imagePreviewWrap}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={form.image_url.trim()} alt="" className={styles.imagePreview} />
+                  </div>
+                ) : (
+                  <span className={styles.fieldHint}>Необязательно. JPEG, PNG, GIF или WebP, до 5 МБ.</span>
+                )}
               </label>
               <label className={styles.field}>
                 Город

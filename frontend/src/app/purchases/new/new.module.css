@@ -59,6 +59,18 @@
   outline: none;
 }
 
+.field input.fileHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .field textarea {
   resize: vertical;
   min-height: 100px;
@@ -113,4 +125,78 @@
   .row {
     grid-template-columns: 1fr;
   }
+}
+
+.imageActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.fieldNote {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+.filePick {
+  align-self: flex-start;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-dark);
+  background: var(--white);
+  cursor: pointer;
+}
+
+.filePick:hover:not(:disabled) {
+  border-color: var(--purple-main);
+  color: var(--purple-main);
+}
+
+.filePick:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.fileClear {
+  border: none;
+  padding: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-gray);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.fileClear:hover:not(:disabled) {
+  color: var(--purple-main);
+}
+
+.fileClear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.previewWrap {
+  max-width: 280px;
+  margin-top: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  background: #f4f4f6;
+}
+
+.previewImg {
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+  object-fit: cover;
+  display: block;
 }

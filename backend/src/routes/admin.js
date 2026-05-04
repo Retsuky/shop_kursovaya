@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../config/db");
 const requireAdmin = require("../middleware/requireAdmin");
+const { notifyStatusChange } = require("../services/notifications");
 
 const router = express.Router();
 
@@ -376,11 +377,13 @@ router.patch("/purchases/:id", async (req, res) => {
   }
 
   try {
-    const exists = await pool.query("SELECT id FROM purchases WHERE id = $1", [id]);
+    const exists = await pool.query("SELECT id, status FROM purchases WHERE id = $1", [id]);
 
     if (!exists.rows[0]) {
       return res.status(404).json({ message: "Закупка не найдена." });
     }
+
+    const prevStatus = exists.rows[0].status;
 
     values.push(id);
     const idPlaceholder = values.length;
@@ -391,6 +394,18 @@ router.patch("/purchases/:id", async (req, res) => {
     );
 
     const row = await fetchPurchaseById(id);
+    if (
+      body.status !== undefined &&
+      row &&
+      String(row.status).trim() !== String(prevStatus ?? "").trim()
+    ) {
+      try {
+        await notifyStatusChange(pool, id, prevStatus, row.status, []);
+      } catch (notifyErr) {
+        console.error("Admin notify status:", notifyErr);
+      }
+    }
+
     return res.status(200).json(mapPurchase(row));
   } catch (error) {
     console.error("Admin patch purchase:", error);

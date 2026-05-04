@@ -16,6 +16,10 @@ async function initDb() {
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE`
   );
 
+  await pool.query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT NOT NULL DEFAULT ''`
+  );
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS purchases (
       id SERIAL PRIMARY KEY,
@@ -52,6 +56,39 @@ async function initDb() {
   );
   await pool.query(
     `CREATE INDEX IF NOT EXISTS idx_participants_user ON purchase_participants(user_id)`
+  );
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      purchase_id INTEGER REFERENCES purchases(id) ON DELETE CASCADE,
+      type VARCHAR(48) NOT NULL DEFAULT 'deal_update',
+      title VARCHAR(220) NOT NULL,
+      body TEXT NOT NULL DEFAULT '',
+      read_at TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications(user_id, created_at DESC)`
+  );
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id) WHERE read_at IS NULL`
+  );
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS purchase_discussion_messages (
+      id SERIAL PRIMARY KEY,
+      purchase_id INTEGER NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body TEXT NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      CHECK (char_length(trim(body)) > 0)
+    )
+  `);
+  await pool.query(
+    `CREATE INDEX IF NOT EXISTS idx_discussion_purchase_created ON purchase_discussion_messages(purchase_id, created_at ASC)`
   );
 
   await pool.query(

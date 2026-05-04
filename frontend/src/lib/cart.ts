@@ -1,4 +1,5 @@
 import type { Purchase } from "./purchasesMeta";
+import { resolvePurchaseUnitPriceRaw } from "./catalogDisplay";
 
 const STORAGE_KEY = "shop_cart_v1";
 const EVENT_NAME = "shop-cart-changed";
@@ -10,6 +11,12 @@ export type CartLine = {
   unitPrice: string;
   imageUrl: string;
   quantity: number;
+  /** Город (если указан в закупке) */
+  city?: string;
+  /** Адрес / точка выдачи */
+  pickupAddress?: string;
+  /** ISO-дата окончания сбора заявок */
+  deadline?: string;
 };
 
 export function getCart(): CartLine[] {
@@ -57,9 +64,10 @@ export function clearCart() {
 export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
   const q = Math.max(1, Math.floor(quantity));
   const cart = getCart();
-  const imageUrl =
-    purchase.image_url?.trim() ||
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBinnOgENAwDx3Cjp4dVQm-QPyT4K0FmppHETJ1UnhzbQsh62rTK2YvmP_W003pxfxsduHErVaUoTQJDB0OQI-TN0IaGqKWAwigtEK0CAWzyhAZcmaZLKT4GKKO9jN_HVFJRkLvJDXEF0a4FvCwVcaSQIDXiotXhGcn1k40KUYuV1SpsP7OQc7Dcue_o7XY-bZziQ2HKMJeTsOlzM7e7HExDDB6RH8HNaEV-NwTL0SYEZpkEOJf_r5ztszeFh_qZxDqjTfmC_IgDK0";
+  const imageUrl = purchase.image_url?.trim() ?? "";
+  const city = purchase.city?.trim() || undefined;
+  const pickupAddress = purchase.pickup_address?.trim() || undefined;
+  const deadline = purchase.deadline?.trim() || undefined;
   const idx = cart.findIndex((l) => l.purchaseId === purchase.id);
   if (idx >= 0) {
     cart[idx] = {
@@ -67,17 +75,23 @@ export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
       quantity: cart[idx].quantity + q,
       title: purchase.title,
       productName: purchase.product_name,
-      unitPrice: purchase.unit_price,
+      unitPrice: resolvePurchaseUnitPriceRaw(purchase),
       imageUrl,
+      city,
+      pickupAddress,
+      deadline,
     };
   } else {
     cart.push({
       purchaseId: purchase.id,
       title: purchase.title,
       productName: purchase.product_name,
-      unitPrice: purchase.unit_price,
+      unitPrice: resolvePurchaseUnitPriceRaw(purchase),
       imageUrl,
       quantity: q,
+      city,
+      pickupAddress,
+      deadline,
     });
   }
   persist(cart);

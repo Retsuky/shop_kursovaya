@@ -79,3 +79,27 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.loadingHint,
+.emptyHint {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--cb-on-surface-variant);
+}
+
+.loadError {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #93000a;
+}
+
+.emptyLink {
+  font-weight: 700;
+  color: var(--cb-primary);
+  text-decoration: none;
+}
+
+.emptyLink:hover {
+  text-decoration: underline;
+}

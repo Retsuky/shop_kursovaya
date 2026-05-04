@@ -66,9 +66,7 @@ export default function AdminProductCard({
   const barTone = almost ? "tertiary" : "primary";
   const showPulse = almost && collecting;
 
-  const img =
-    purchase.image_url?.trim() ||
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBinnOgENAwDx3Cjp4dVQm-QPyT4K0FmppHETJ1UnhzbQsh62rTK2YvmP_W003pxfxsduHErVaUoTQJDB0OQI-TN0IaGqKWAwigtEK0CAWzyhAZcmaZLKT4GKKO9jN_HVFJRkLvJDXEF0a4FvCwVcaSQIDXiotXhGcn1k40KUYuV1SpsP7OQc7Dcue_o7XY-bZziQ2HKMJeTsOlzM7e7HExDDB6RH8HNaEV-NwTL0SYEZpkEOJf_r5ztszeFh_qZxDqjTfmC_IgDK0";
+  const imageUrl = purchase.image_url?.trim() || "";
 
   const categoryLabel = purchase.category?.trim() || "Без категории";
   const participants = purchase.participant_count ?? 0;
@@ -80,14 +78,22 @@ export default function AdminProductCard({
       className={`${tokens.root} ${cardStyles.card} ${almost && collecting ? cardStyles.cardHighlight : ""}`}
     >
       <div className={cardStyles.imageWrap}>
-        <Image
-          src={img}
-          alt={purchase.title}
-          width={480}
-          height={320}
-          className={cardStyles.image}
-          unoptimized
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={purchase.title}
+            width={480}
+            height={320}
+            className={cardStyles.image}
+            unoptimized
+          />
+        ) : (
+          <div
+            className={`${cardStyles.image} ${cardStyles.imagePlaceholder}`}
+            role="img"
+            aria-label={purchase.title}
+          />
+        )}
         <div className={cardStyles.badges}>
           <span className={`${cardStyles.badge} ${cardStyles[`badge_${badgeMain.variant}`]}`}>
             {badgeMain.text}

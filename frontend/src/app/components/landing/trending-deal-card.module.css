@@ -27,6 +27,10 @@
   transition: transform 0.5s ease;
 }
 
+.imagePlaceholder {
+  background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #e8f5f3 100%);
+}
+
 .card:hover .image {
   transform: scale(1.08);
 }

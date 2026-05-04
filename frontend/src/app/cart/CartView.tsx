@@ -51,7 +51,8 @@ export default function CartView() {
         <header className={styles.head}>
           <h1 className={styles.title}>Корзина</h1>
           <p className={styles.subtitle}>
-            Отложенные групповые сделки. Количество — заявленные места; оформление — на странице каждой закупки.
+            Выбранные групповые сделки и количество мест. Перейдите к оформлению — на следующем шаге можно будет
+            подтвердить заказ.
           </p>
         </header>
 
@@ -73,13 +74,17 @@ export default function CartView() {
                 return (
                   <article key={line.purchaseId} className={styles.line}>
                     <div className={styles.thumb}>
-                      <Image
-                        src={line.imageUrl}
-                        alt=""
-                        width={100}
-                        height={100}
-                        unoptimized
-                      />
+                      {line.imageUrl.trim() ? (
+                        <Image
+                          src={line.imageUrl}
+                          alt=""
+                          width={100}
+                          height={100}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className={styles.thumbPlaceholder} aria-hidden />
+                      )}
                     </div>
                     <div className={styles.lineBody}>
                       <h2 className={styles.lineTitle}>
@@ -150,9 +155,7 @@ export default function CartView() {
                 <Link href="/catalog" className={styles.checkoutSecondary}>
                   Продолжить покупки
                 </Link>
-                <p className={styles.hint}>
-                  Участие подтверждается на странице сделки: укажите количество и присоединитесь к группе.
-                </p>
+                <p className={styles.hint}>После подтверждения заказа корзина будет очищена.</p>
               </div>
             </aside>
           </div>

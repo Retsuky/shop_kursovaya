@@ -35,6 +35,10 @@ yarn-error.log*
 /frontend/yarn-debug.log*
 /frontend/yarn-error.log*
 
+# uploaded product images (keep directory via .gitkeep)
+/backend/uploads/*
+!/backend/uploads/.gitkeep
+
 # env files (can opt-in for committing if needed)
 .env*
 /frontend/.env*

@@ -12,6 +12,7 @@ import api from "../../../lib/api";
 import { getAuthSession, subscribeToAuthChanges, type AuthSession } from "../../../lib/auth";
 import type { Purchase, PurchaseStatus } from "../../../lib/purchasesMeta";
 import { getNextStatus } from "../../../lib/purchasesMeta";
+import { resolvePurchaseUnitPriceNumeric } from "../../../lib/catalogDisplay";
 import PurchaseDetailStitch from "./PurchaseDetailStitch";
 import stitchStyles from "./purchase-detail-stitch.module.css";
 
@@ -19,6 +20,9 @@ type Participant = {
   user_id: number;
   quantity: number;
   user_name: string;
+  email?: string;
+  avatar_url?: string;
+  joined_at?: string;
 };
 
 type DetailResponse = {
@@ -97,7 +101,7 @@ export default function PurchaseDetailPage() {
       return 0;
     }
 
-    const price = Number.parseFloat(String(purchase.unit_price).replace(",", "."));
+    const price = resolvePurchaseUnitPriceNumeric(purchase);
     const qtyTotal = purchase.total_quantity ?? 0;
 
     if (!Number.isFinite(price)) {

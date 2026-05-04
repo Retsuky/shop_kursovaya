@@ -4,10 +4,11 @@ import type { Purchase } from "../../../lib/purchasesMeta";
 import {
   catalogProgress,
   discountPercent,
-  formatRub,
   formatTimeLeft,
   isAlmostFull,
+  purchasePricePresentation,
 } from "../../../lib/catalogDisplay";
+import ParticipantAvatar from "../../../lib/ParticipantAvatar";
 import AddToCartButton from "../cart/AddToCartButton";
 import tokens from "../landing/landing-tokens.module.css";
 import styles from "./catalog-product-card.module.css";
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export default function CatalogProductCard({ purchase }: Props) {
+  const pricePres = purchasePricePresentation(purchase);
   const { percent, participantsLabel } = catalogProgress(purchase);
   const disc = discountPercent(purchase);
   const almost = isAlmostFull(purchase);
@@ -39,30 +41,38 @@ export default function CatalogProductCard({ purchase }: Props) {
   const barTone = almost ? "tertiary" : "primary";
   const showPulse = almost && collecting;
 
-  const img =
-    purchase.image_url?.trim() ||
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBinnOgENAwDx3Cjp4dVQm-QPyT4K0FmppHETJ1UnhzbQsh62rTK2YvmP_W003pxfxsduHErVaUoTQJDB0OQI-TN0IaGqKWAwigtEK0CAWzyhAZcmaZLKT4GKKO9jN_HVFJRkLvJDXEF0a4FvCwVcaSQIDXiotXhGcn1k40KUYuV1SpsP7OQc7Dcue_o7XY-bZziQ2HKMJeTsOlzM7e7HExDDB6RH8HNaEV-NwTL0SYEZpkEOJf_r5ztszeFh_qZxDqjTfmC_IgDK0";
+  const imageUrl = purchase.image_url?.trim() || "";
 
   const categoryLabel = purchase.category?.trim() || "Без категории";
   const ctaLabel =
     almost && collecting ? "Последнее место! Вступить" : closed ? "Подробнее" : "Вступить в группу";
 
+  const preview = purchase.participant_preview ?? [];
+  const avatarSlots = preview.slice(0, 3);
   const participants = purchase.participant_count ?? 0;
-  const extra = Math.max(0, participants - 3);
+  const extra = Math.max(0, participants - avatarSlots.length);
 
   return (
     <article
       className={`${tokens.root} ${styles.card} ${almost && collecting ? styles.cardHighlight : ""}`}
     >
       <div className={styles.imageWrap}>
-        <Image
-          src={img}
-          alt={purchase.title}
-          width={480}
-          height={320}
-          className={styles.image}
-          unoptimized
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={purchase.title}
+            width={480}
+            height={320}
+            className={styles.image}
+            unoptimized
+          />
+        ) : (
+          <div
+            className={`${styles.image} ${styles.imagePlaceholder}`}
+            role="img"
+            aria-label={purchase.title}
+          />
+        )}
         <div className={styles.badges}>
           <span className={`${styles.badge} ${styles[`badge_${badgeMain.variant}`]}`}>
             {badgeMain.text}
@@ -79,13 +89,14 @@ export default function CatalogProductCard({ purchase }: Props) {
 
         <div className={styles.metaRow}>
           <div>
-            <span className={styles.priceHint}>Цена CoBuy</span>
+            <span className={styles.priceHint}>Цена сейчас</span>
             <div className={styles.priceLine}>
-              <span className={styles.price}>{formatRub(purchase.unit_price)}</span>
-              {purchase.retail_price ? (
-                <span className={styles.oldPrice}>{formatRub(purchase.retail_price)}</span>
+              <span className={styles.price}>{pricePres.mainPrice}</span>
+              {pricePres.comparePrice ? (
+                <span className={styles.oldPrice}>{pricePres.comparePrice}</span>
               ) : null}
             </div>
+            <span className={styles.priceExplain}>{pricePres.caption}</span>
           </div>
           <div className={styles.timeWrap}>
             <span className={styles.time}>
@@ -114,16 +125,8 @@ export default function CatalogProductCard({ purchase }: Props) {
 
         {participants > 0 ? (
           <div className={styles.avatars}>
-            {[0, 1, 2].map((i) => (
-              <Image
-                key={i}
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${purchase.id}-${i}`}
-                alt=""
-                width={32}
-                height={32}
-                className={styles.avatar}
-                unoptimized
-              />
+            {avatarSlots.map((u) => (
+              <ParticipantAvatar key={u.user_id} participant={u} size={32} className={styles.avatar} />
             ))}
             {extra > 0 ? <span className={styles.avatarMore}>+{extra}</span> : null}
           </div>

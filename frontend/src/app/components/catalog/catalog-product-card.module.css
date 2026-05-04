@@ -34,6 +34,10 @@
   transform: scale(1.05);
 }
 
+.imagePlaceholder {
+  background: #dfe3e8;
+}
+
 .badges {
   position: absolute;
   top: 12px;
@@ -135,6 +139,15 @@
   font-size: 12px;
   color: #64748b;
   text-decoration: line-through;
+}
+
+.priceExplain {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #64748b;
+  max-width: 16rem;
 }
 
 .timeWrap {

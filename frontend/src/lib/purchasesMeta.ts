@@ -34,6 +34,14 @@ export function getNextStatus(current: string): PurchaseStatus | null {
   return STATUS_ORDER[i + 1];
 }
 
+export type ParticipantPreview = {
+  user_id: number;
+  user_name: string;
+  /** Для Dicebear при пустом avatar_url */
+  email?: string;
+  avatar_url?: string;
+};
+
 export type Purchase = {
   id: number;
   organizer_id: number;
@@ -55,6 +63,7 @@ export type Purchase = {
   category?: string;
   image_url?: string;
   retail_price?: string | null;
+  participant_preview?: ParticipantPreview[];
 };
 
 export type CatalogResponse = {

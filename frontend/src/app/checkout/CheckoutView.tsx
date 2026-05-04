@@ -17,10 +17,62 @@ import {
 import { formatRub } from "../../lib/catalogDisplay";
 import styles from "./checkout.module.css";
 
-const MAP_URL =
-  "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&q=80";
-
 const AVATAR_SEEDS = ["checkout-a", "checkout-b", "checkout-c", "checkout-d"];
+
+const COURIER_DRAFT_KEY = "shop_checkout_courier_v1";
+
+type CourierDraft = {
+  address: string;
+  comment: string;
+};
+
+function loadCourierDraft(): CourierDraft {
+  if (typeof window === "undefined") {
+    return { address: "", comment: "" };
+  }
+  try {
+    const raw = sessionStorage.getItem(COURIER_DRAFT_KEY);
+    if (!raw) {
+      return { address: "", comment: "" };
+    }
+    const j = JSON.parse(raw) as unknown;
+    if (j == null || typeof j !== "object") {
+      return { address: "", comment: "" };
+    }
+    const address = typeof (j as CourierDraft).address === "string" ? (j as CourierDraft).address : "";
+    const comment = typeof (j as CourierDraft).comment === "string" ? (j as CourierDraft).comment : "";
+    return { address, comment };
+  } catch {
+    return { address: "", comment: "" };
+  }
+}
+
+function saveCourierDraft(draft: CourierDraft) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    sessionStorage.setItem(COURIER_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    /* ignore */
+  }
+}
+
+function formatDealDeadline(iso?: string): string | null {
+  if (!iso?.trim()) {
+    return null;
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+  return d.toLocaleString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 function lineSubtotal(line: CartLine): number {
   const unit = Number(String(line.unitPrice).replace(",", "."));
@@ -34,6 +86,10 @@ export default function CheckoutView() {
   const [cartReady, setCartReady] = useState(false);
   const [delivery, setDelivery] = useState<"pickup" | "courier">("pickup");
   const [payment, setPayment] = useState<"card" | "sbp">("card");
+  const [courierAddress, setCourierAddress] = useState("");
+  const [courierComment, setCourierComment] = useState("");
+  const [courierAddressError, setCourierAddressError] = useState("");
+  const [courierDraftReady, setCourierDraftReady] = useState(false);
 
   const sync = useCallback(() => {
     setLines(getCart());
@@ -42,8 +98,19 @@ export default function CheckoutView() {
   useEffect(() => {
     setLines(getCart());
     setCartReady(true);
+    const draft = loadCourierDraft();
+    setCourierAddress(draft.address);
+    setCourierComment(draft.comment);
+    setCourierDraftReady(true);
     return subscribeToCartChanges(sync);
   }, [sync]);
+
+  useEffect(() => {
+    if (!courierDraftReady) {
+      return;
+    }
+    saveCourierDraft({ address: courierAddress, comment: courierComment });
+  }, [courierDraftReady, courierAddress, courierComment]);
 
   useEffect(() => {
     if (!cartReady) {
@@ -67,7 +134,12 @@ export default function CheckoutView() {
     if (lines.length === 0) {
       return;
     }
-    router.push(`/purchases/${lines[0].purchaseId}`);
+    if (delivery === "courier" && !courierAddress.trim()) {
+      setCourierAddressError("Укажите адрес доставки курьером.");
+      return;
+    }
+    setCourierAddressError("");
+    router.push("/order-confirmed");
   };
 
   if (!cartReady || lines.length === 0) {
@@ -100,8 +172,7 @@ export default function CheckoutView() {
             <header>
               <h1 className={styles.title}>Оформление заказа</h1>
               <p className={styles.hint}>
-                Проверьте состав и способ получения. Участие в группе подтверждается на странице
-                каждой сделки.
+                Проверьте состав и способ получения. По кнопке «Оформить заказ» откроется подтверждение заказа.
               </p>
             </header>
 
@@ -115,13 +186,17 @@ export default function CheckoutView() {
                 return (
                   <div key={line.purchaseId} className={styles.line}>
                     <div className={styles.thumb}>
-                      <Image
-                        src={line.imageUrl}
-                        alt=""
-                        width={128}
-                        height={128}
-                        unoptimized
-                      />
+                      {line.imageUrl.trim() ? (
+                        <Image
+                          src={line.imageUrl}
+                          alt=""
+                          width={128}
+                          height={128}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className={styles.thumbPlaceholder} aria-hidden />
+                      )}
                     </div>
                     <div className={styles.lineBody}>
                       <div className={styles.lineTop}>
@@ -191,12 +266,17 @@ export default function CheckoutView() {
                     type="radio"
                     name="delivery"
                     checked={delivery === "pickup"}
-                    onChange={() => setDelivery("pickup")}
+                    onChange={() => {
+                      setDelivery("pickup");
+                      setCourierAddressError("");
+                    }}
                   />
                   <div className={styles.deliveryTop}>
                     <div>
                       <p className={styles.deliveryTitle}>Пункт выдачи</p>
-                      <p className={styles.deliverySub}>Точный адрес сообщит организатор сделки.</p>
+                      <p className={styles.deliverySub}>
+                        Адрес и время выдачи задаёт организатор; данные по сделке — ниже.
+                      </p>
                     </div>
                     <span className="material-symbols-outlined" aria-hidden>
                       store
@@ -217,7 +297,9 @@ export default function CheckoutView() {
                   <div className={styles.deliveryTop}>
                     <div>
                       <p className={styles.deliveryTitle}>Курьер</p>
-                      <p className={styles.deliverySub}>Согласуйте с организатором после набора группы.</p>
+                      <p className={styles.deliverySub}>
+                        Адрес доставки указываете вы. Стоимость и интервал — с организатором.
+                      </p>
                     </div>
                     <span className="material-symbols-outlined" aria-hidden>
                       delivery_dining
@@ -225,9 +307,116 @@ export default function CheckoutView() {
                   </div>
                 </label>
               </div>
-              <div className={styles.mapWrap}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={MAP_URL} alt="" />
+              <div className={styles.deliveryPanel}>
+                {delivery === "pickup" ? (
+                  <>
+                    <p className={styles.deliveryPanelLead}>
+                      Пункт выдачи задаёт <strong>организатор</strong> в карточке закупки. Ниже — то, что было
+                      известно при добавлении в корзину: город, адрес (если указал организатор) и срок сбора заявок.
+                      Уточнить время и детали можно на странице сделки.
+                    </p>
+                    <ul className={styles.deliveryDealList}>
+                      {lines.map((line) => {
+                        const deadlineLabel = formatDealDeadline(line.deadline);
+                        return (
+                          <li key={line.purchaseId} className={styles.deliveryDealCard}>
+                            <p className={styles.deliveryDealTitle}>
+                              <Link href={`/purchases/${line.purchaseId}`}>{line.title}</Link>
+                            </p>
+                            <p className={styles.deliveryDealMeta}>{line.productName}</p>
+                            <dl className={styles.deliveryFacts}>
+                              {deadlineLabel ? (
+                                <>
+                                  <dt>Сбор заявок до</dt>
+                                  <dd>{deadlineLabel}</dd>
+                                </>
+                              ) : null}
+                              <dt>Пункт выдачи</dt>
+                              <dd>
+                                {line.pickupAddress ? (
+                                  <>
+                                    {[line.city, line.pickupAddress].filter(Boolean).join(" · ") ||
+                                      line.pickupAddress}
+                                  </>
+                                ) : line.city ? (
+                                  <>
+                                    Организатор указал город: {line.city}. Точный адрес пункта выдачи смотрите на
+                                    странице сделки или уточните у организатора.
+                                  </>
+                                ) : (
+                                  <>
+                                    Организатор сообщит адрес пункта выдачи на странице сделки или после присоединения
+                                    к группе.
+                                  </>
+                                )}
+                              </dd>
+                            </dl>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <p className={styles.deliveryPanelLead}>
+                      Укажите полный адрес — по нему организатор или курьер сможет связаться с вами после сбора
+                      группы. Стоимость и согласование времени доставки — на странице сделки.
+                    </p>
+                    <div className={styles.courierFields}>
+                      <label className={styles.courierLabel} htmlFor="checkout-courier-address">
+                        Адрес доставки
+                        <textarea
+                          id="checkout-courier-address"
+                          className={`${styles.courierTextarea} ${courierAddressError ? styles.courierInputInvalid : ""}`}
+                          rows={3}
+                          placeholder="Город, улица, дом, квартира"
+                          value={courierAddress}
+                          onChange={(e) => {
+                            setCourierAddress(e.target.value);
+                            if (courierAddressError) {
+                              setCourierAddressError("");
+                            }
+                          }}
+                          required={delivery === "courier"}
+                          aria-invalid={Boolean(courierAddressError)}
+                          aria-describedby={courierAddressError ? "courier-addr-error" : undefined}
+                        />
+                      </label>
+                      {courierAddressError ? (
+                        <p id="courier-addr-error" className={styles.courierFieldError} role="alert">
+                          {courierAddressError}
+                        </p>
+                      ) : null}
+                      <label className={styles.courierLabel} htmlFor="checkout-courier-comment">
+                        Комментарий <span className={styles.courierOptional}>(необязательно)</span>
+                        <input
+                          id="checkout-courier-comment"
+                          type="text"
+                          className={styles.courierInput}
+                          placeholder="Подъезд, домофон, ориентир"
+                          value={courierComment}
+                          onChange={(e) => setCourierComment(e.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <p className={styles.courierListIntro}>Ваши позиции:</p>
+                    <ul className={styles.deliveryDealList}>
+                      {lines.map((line) => {
+                        const deadlineLabel = formatDealDeadline(line.deadline);
+                        return (
+                          <li key={line.purchaseId} className={styles.deliveryDealCard}>
+                            <p className={styles.deliveryDealTitle}>
+                              <Link href={`/purchases/${line.purchaseId}`}>{line.title}</Link>
+                            </p>
+                            {deadlineLabel ? (
+                              <p className={styles.deliveryDealMeta}>Сбор заявок до {deadlineLabel}</p>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
               </div>
             </section>
 
@@ -304,8 +493,7 @@ export default function CheckoutView() {
                 Оформить заказ
               </button>
               <p className={styles.legal}>
-                Нажимая кнопку, вы переходите к сделке для подтверждения участия. Условия — публичная
-                оферта организатора.
+                Нажимая кнопку, вы подтверждаете оформление заказа и переходите к экрану с подтверждением.
               </p>
             </div>
 
@@ -330,8 +518,7 @@ export default function CheckoutView() {
 
             {lines.length > 1 ? (
               <p className={styles.hint}>
-                В корзине несколько сделок: после первой страницы откройте остальные из корзины и
-                подтвердите участие там же.
+                В корзине несколько сделок — они включаются в одно подтверждение; после него корзина очистится.
               </p>
             ) : null}
           </aside>

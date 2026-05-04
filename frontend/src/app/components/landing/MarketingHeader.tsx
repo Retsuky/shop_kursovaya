@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,6 +10,7 @@ import {
   subscribeToAuthChanges,
   type AuthSession,
 } from "../../../lib/auth";
+import { UserAvatar } from "../../../lib/UserAvatar";
 import tokens from "./landing-tokens.module.css";
 import styles from "./marketing-header.module.css";
 
@@ -94,14 +94,7 @@ export default function MarketingHeader() {
           {session ? (
             <div className={styles.userCluster}>
               <Link href="/account" className={styles.avatarWrap} aria-label="Личный кабинет">
-                <Image
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(session.user.email)}`}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className={styles.avatar}
-                  unoptimized
-                />
+                <UserAvatar user={session.user} size={40} className={styles.avatar} />
               </Link>
               <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
                 Выйти

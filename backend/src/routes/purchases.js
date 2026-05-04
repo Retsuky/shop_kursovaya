@@ -1,10 +1,45 @@
 const express = require("express");
 const pool = require("../config/db");
 const requireAuth = require("../middleware/requireAuth");
+const { createNotification, notifyStatusChange } = require("../services/notifications");
 
 const router = express.Router();
 
 const STATUS_FLOW = ["collecting", "payment", "supplier_order", "delivery", "completed"];
+
+const PARTICIPANT_PREVIEW_SQL = `
+  (
+    SELECT COALESCE(
+      json_agg(
+        json_build_object(
+          'user_id', s.user_id,
+          'user_name', s.user_name,
+          'email', s.email,
+          'avatar_url', s.avatar_url
+        )
+        ORDER BY s.created_at ASC
+      ),
+      '[]'::json
+    )
+    FROM (
+      SELECT *
+      FROM (
+        SELECT
+          pp.user_id,
+          u.name AS user_name,
+          u.email,
+          COALESCE(NULLIF(trim(u.avatar_url), ''), '') AS avatar_url,
+          pp.created_at
+        FROM purchase_participants pp
+        INNER JOIN users u ON u.id = pp.user_id
+        WHERE pp.purchase_id = p.id
+        ORDER BY pp.created_at DESC
+        LIMIT 3
+      ) z
+      ORDER BY z.created_at ASC
+    ) s
+  )
+`;
 
 function mapPurchase(row) {
   if (!row) return null;
@@ -29,9 +64,32 @@ function mapPurchase(row) {
     category: row.category != null ? String(row.category) : "",
     image_url: row.image_url != null ? String(row.image_url) : "",
     retail_price: row.retail_price != null ? String(row.retail_price) : null,
+    participant_preview: normalizeParticipantPreview(row.participant_preview),
   };
 }
 
+function normalizeParticipantPreview(raw) {
+  if (!raw) {
+    return [];
+  }
+  let arr = raw;
+  if (typeof raw === "string") {
+    try {
+      arr = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(arr)) {
+    return [];
+  }
+  return arr.map((item) => ({
+    user_id: Number(item?.user_id),
+    user_name: item?.user_name != null ? String(item.user_name) : "",
+    email: item?.email != null ? String(item.email) : "",
+    avatar_url: item?.avatar_url != null ? String(item.avatar_url).trim() : "",
+  }));
+}
 router.get("/catalog", async (req, res) => {
   const limit = Math.min(48, Math.max(1, parseInt(String(req.query.limit), 10) || 12));
   const offset = Math.max(0, parseInt(String(req.query.offset), 10) || 0);
@@ -111,7 +169,8 @@ router.get("/catalog", async (req, res) => {
           p.*,
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
-          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
         WHERE ${whereSql}
@@ -148,7 +207,8 @@ router.get("/", async (req, res) => {
           p.*,
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
-          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
         ${where}
@@ -174,7 +234,8 @@ router.get("/mine", requireAuth, async (req, res) => {
           p.*,
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
-          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
         WHERE p.organizer_id = $1
@@ -190,7 +251,8 @@ router.get("/mine", requireAuth, async (req, res) => {
           u.name AS organizer_name,
           pp.quantity AS my_quantity,
           (SELECT COUNT(DISTINCT px.user_id)::int FROM purchase_participants px WHERE px.purchase_id = p.id) AS participant_count,
-          (SELECT COALESCE(SUM(px.quantity), 0)::int FROM purchase_participants px WHERE px.purchase_id = p.id) AS total_quantity
+          (SELECT COALESCE(SUM(px.quantity), 0)::int FROM purchase_participants px WHERE px.purchase_id = p.id) AS total_quantity,
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchase_participants pp
         INNER JOIN purchases p ON p.id = pp.purchase_id
         INNER JOIN users u ON u.id = p.organizer_id
@@ -227,7 +289,8 @@ router.get("/:id", async (req, res) => {
           p.*,
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
-          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
         WHERE p.id = $1
@@ -243,7 +306,13 @@ router.get("/:id", async (req, res) => {
 
     const participantsResult = await pool.query(
       `
-        SELECT pp.user_id, pp.quantity, usr.name AS user_name
+        SELECT
+          pp.user_id,
+          pp.quantity,
+          usr.name AS user_name,
+          usr.email,
+          COALESCE(NULLIF(trim(usr.avatar_url), ''), '') AS avatar_url,
+          pp.created_at AS joined_at
         FROM purchase_participants pp
         INNER JOIN users usr ON usr.id = pp.user_id
         WHERE pp.purchase_id = $1
@@ -258,6 +327,10 @@ router.get("/:id", async (req, res) => {
         user_id: p.user_id,
         quantity: p.quantity,
         user_name: p.user_name,
+        email: p.email != null ? String(p.email) : "",
+        avatar_url: p.avatar_url != null ? String(p.avatar_url).trim() : "",
+        joined_at:
+          p.joined_at != null ? (typeof p.joined_at === "string" ? p.joined_at : p.joined_at.toISOString()) : "",
       })),
     });
   } catch (error) {
@@ -391,10 +464,16 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
     }
 
     if (nextStatus === "cancelled") {
+      const prev = current.status;
       await pool.query("UPDATE purchases SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2", [
         "cancelled",
         id,
       ]);
+      try {
+        await notifyStatusChange(pool, id, prev, "cancelled", [req.user.id]);
+      } catch (notifyErr) {
+        console.error("Notify cancelled:", notifyErr);
+      }
       const updated = await pool.query(
         `
           SELECT p.*, u.name AS organizer_name,
@@ -426,10 +505,16 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       });
     }
 
+    const prev = current.status;
     await pool.query("UPDATE purchases SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2", [
       nextStatus,
       id,
     ]);
+    try {
+      await notifyStatusChange(pool, id, prev, nextStatus, [req.user.id]);
+    } catch (notifyErr) {
+      console.error("Notify status:", notifyErr);
+    }
 
     const updated = await pool.query(
       `
@@ -500,6 +585,20 @@ router.post("/:id/join", requireAuth, async (req, res) => {
       [id, req.user.id, qty]
     );
 
+    try {
+      const nameRes = await pool.query("SELECT name FROM users WHERE id = $1", [req.user.id]);
+      const joinerName = nameRes.rows[0]?.name ?? "Участник";
+      await createNotification(pool, {
+        userId: purchase.organizer_id,
+        purchaseId: id,
+        type: "join_request",
+        title: "Новая заявка в закупке",
+        body: `${joinerName} присоединился (×${qty}) к «${purchase.title}».`,
+      });
+    } catch (notifyErr) {
+      console.error("Notify join:", notifyErr);
+    }
+
     const totals = await pool.query(
       `
         SELECT
@@ -547,15 +646,174 @@ router.delete("/:id/join", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Отказаться можно только пока идёт сбор заявок." });
     }
 
-    await pool.query("DELETE FROM purchase_participants WHERE purchase_id = $1 AND user_id = $2", [
-      id,
-      req.user.id,
-    ]);
+    const deleted = await pool.query(
+      "DELETE FROM purchase_participants WHERE purchase_id = $1 AND user_id = $2 RETURNING id",
+      [id, req.user.id]
+    );
+
+    if (!deleted.rows[0]) {
+      return res.status(400).json({ message: "Вы не записаны участником этой закупки." });
+    }
+
+    try {
+      const nameRes = await pool.query("SELECT name FROM users WHERE id = $1", [req.user.id]);
+      const leaverName = nameRes.rows[0]?.name ?? "Участник";
+      await createNotification(pool, {
+        userId: purchase.organizer_id,
+        purchaseId: id,
+        type: "participant_left",
+        title: "Участник вышел из закупки",
+        body: `${leaverName} отказался от «${purchase.title}».`,
+      });
+    } catch (notifyErr) {
+      console.error("Notify leave:", notifyErr);
+    }
 
     return res.status(200).json({ message: "Вы вышли из закупки." });
   } catch (error) {
     console.error("Leave purchase:", error);
     return res.status(500).json({ message: "Не удалось выйти из закупки." });
+  }
+});
+
+function mapDiscussionMessage(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    id: row.id,
+    purchase_id: row.purchase_id,
+    user_id: row.user_id,
+    user_name: row.user_name != null ? String(row.user_name) : "",
+    email: row.email != null ? String(row.email) : "",
+    avatar_url: row.avatar_url != null ? String(row.avatar_url).trim() : "",
+    body: row.body != null ? String(row.body) : "",
+    created_at:
+      row.created_at != null
+        ? typeof row.created_at === "string"
+          ? row.created_at
+          : row.created_at.toISOString()
+        : "",
+  };
+}
+
+router.get("/:id/discussion", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id < 1) {
+    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
+  }
+
+  try {
+    const exists = await pool.query("SELECT id FROM purchases WHERE id = $1", [id]);
+    if (!exists.rows[0]) {
+      return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    const result = await pool.query(
+      `
+        SELECT
+          m.id,
+          m.purchase_id,
+          m.user_id,
+          m.body,
+          m.created_at,
+          u.name AS user_name,
+          u.email,
+          COALESCE(NULLIF(trim(u.avatar_url), ''), '') AS avatar_url
+        FROM purchase_discussion_messages m
+        INNER JOIN users u ON u.id = m.user_id
+        WHERE m.purchase_id = $1
+        ORDER BY m.created_at ASC
+        LIMIT 200
+      `,
+      [id]
+    );
+
+    return res.status(200).json({ messages: result.rows.map(mapDiscussionMessage) });
+  } catch (error) {
+    console.error("Discussion list:", error);
+    return res.status(500).json({ message: "Не удалось загрузить обсуждение." });
+  }
+});
+
+router.post("/:id/discussion", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  const rawBody = req.body?.body;
+
+  if (!Number.isInteger(id) || id < 1) {
+    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
+  }
+
+  const body = rawBody != null ? String(rawBody).trim() : "";
+  if (body.length === 0) {
+    return res.status(400).json({ message: "Введите текст сообщения." });
+  }
+  if (body.length > 4000) {
+    return res.status(400).json({ message: "Сообщение не длиннее 4000 символов." });
+  }
+
+  try {
+    const pResult = await pool.query(
+      "SELECT id, title, organizer_id, status FROM purchases WHERE id = $1",
+      [id]
+    );
+    const purchase = pResult.rows[0];
+
+    if (!purchase) {
+      return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    if (purchase.status === "cancelled") {
+      return res.status(400).json({ message: "В отменённой закупке нельзя писать сообщения." });
+    }
+
+    const ins = await pool.query(
+      `
+        INSERT INTO purchase_discussion_messages (purchase_id, user_id, body)
+        VALUES ($1, $2, $3)
+        RETURNING id, purchase_id, user_id, body, created_at
+      `,
+      [id, req.user.id, body]
+    );
+
+    const inserted = ins.rows[0];
+    const uRow = await pool.query(
+      `
+        SELECT name, email, COALESCE(NULLIF(trim(avatar_url), ''), '') AS avatar_url
+        FROM users WHERE id = $1
+      `,
+      [req.user.id]
+    );
+
+    const authorName = uRow.rows[0]?.name ?? "Участник";
+    const authorEmail = uRow.rows[0]?.email != null ? String(uRow.rows[0].email) : "";
+
+    if (purchase.organizer_id !== req.user.id) {
+      try {
+        await createNotification(pool, {
+          userId: purchase.organizer_id,
+          purchaseId: id,
+          type: "discussion",
+          title: "Новое сообщение в обсуждении",
+          body: `${authorName} написал в «${purchase.title}».`,
+        });
+      } catch (notifyErr) {
+        console.error("Notify discussion:", notifyErr);
+      }
+    }
+
+    const msg = mapDiscussionMessage({
+      ...inserted,
+      user_name: authorName,
+      email: authorEmail,
+      avatar_url: uRow.rows[0]?.avatar_url ?? "",
+    });
+
+    return res.status(201).json({ message: msg });
+  } catch (error) {
+    console.error("Discussion post:", error);
+    return res.status(500).json({ message: "Не удалось отправить сообщение." });
   }
 });
 

@@ -10,8 +10,9 @@ export type TrendingDealCardProps = {
   imageUrl: string;
   imageAlt: string;
   price: string;
-  oldPrice: string;
-  discountLabel: string;
+  /** Розничная цена; если нет — блок зачёркнутой цены и скидки скрывается */
+  oldPrice?: string;
+  discountLabel?: string;
   progressLabel: string;
   progressPercent: number;
   progressTone: "primary" | "tertiary";
@@ -29,7 +30,7 @@ export default function TrendingDealCard(props: TrendingDealCardProps) {
     imageUrl,
     imageAlt,
     price,
-    oldPrice,
+    oldPrice: oldPriceProp,
     discountLabel,
     progressLabel,
     progressPercent,
@@ -41,6 +42,8 @@ export default function TrendingDealCard(props: TrendingDealCardProps) {
     badge,
     cta,
   } = props;
+
+  const oldPrice = oldPriceProp?.trim();
 
   const badgeClass =
     badge.variant === "goal"
@@ -65,14 +68,18 @@ export default function TrendingDealCard(props: TrendingDealCardProps) {
   return (
     <article className={`${tokens.root} ${styles.card}`}>
       <div className={styles.imageWrap}>
-        <Image
-          src={imageUrl}
-          alt={imageAlt}
-          width={400}
-          height={320}
-          className={styles.image}
-          unoptimized
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={imageAlt}
+            width={400}
+            height={320}
+            className={styles.image}
+            unoptimized
+          />
+        ) : (
+          <div className={`${styles.image} ${styles.imagePlaceholder}`} role="img" aria-label={imageAlt} />
+        )}
         <div className={styles.badgeWrap}>
           <span className={`${styles.badge} ${badgeClass}`}>{badge.text}</span>
         </div>
@@ -82,8 +89,8 @@ export default function TrendingDealCard(props: TrendingDealCardProps) {
 
       <div className={styles.priceRow}>
         <span className={styles.price}>{price}</span>
-        <span className={styles.oldPrice}>{oldPrice}</span>
-        <span className={styles.discount}>{discountLabel}</span>
+        {oldPrice ? <span className={styles.oldPrice}>{oldPrice}</span> : null}
+        {discountLabel ? <span className={styles.discount}>{discountLabel}</span> : null}
       </div>
 
       <div className={styles.progressBlock}>

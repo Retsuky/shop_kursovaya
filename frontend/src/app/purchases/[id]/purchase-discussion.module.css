@@ -1,0 +1,141 @@
+.thread {
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-right: 4px;
+}
+
+.empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--cb-on-surface-variant);
+}
+
+.item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+}
+
+.itemHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.author {
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: var(--cb-on-surface);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--cb-on-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 88px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--cb-surface-container-lowest);
+  border: 1px solid #e2e8f0;
+  font: inherit;
+  font-size: 0.9375rem;
+  resize: vertical;
+  color: var(--cb-on-surface);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #00685f;
+  box-shadow: 0 0 0 3px rgba(0, 104, 95, 0.12);
+}
+
+.textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.submit {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #00685f;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+.submit:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.submit:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--cb-on-surface-variant);
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #93000a;
+}
+
+.loginLink {
+  font-weight: 800;
+  color: var(--cb-primary);
+  text-decoration: none;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}

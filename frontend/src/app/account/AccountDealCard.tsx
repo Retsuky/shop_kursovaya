@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Purchase } from "../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../lib/purchasesMeta";
 import { catalogProgress } from "../../lib/catalogDisplay";
+import ParticipantAvatar from "../../lib/ParticipantAvatar";
 import styles from "./account-deal-card.module.css";
 
 type Role = "organizer" | "participant";
@@ -14,9 +15,7 @@ type Props = {
 
 export default function AccountDealCard({ purchase, role }: Props) {
   const { percent, participantsLabel } = catalogProgress(purchase);
-  const img =
-    purchase.image_url?.trim() ||
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBIuCheOH4xTuJl8R75_fmKr8inRmRmDcbUEcKX2psgQqXLshrcwRwXIWua53yJoexl6Y5Kn3F4w_Rec6-tgOp04fpFausi1KKxidDsFSmKNvI-lVFu-8eHS-hq_cE4IV1NkKPx8Vxb4_eOXGgB8TNqd--7RbEhw75cL4PSdhhaVIp8LvSDynAyN0WKQR4AwwQCpgMUz_FWzD2ZNag4Q9ODWakanAgl2r-ua-HvcxxTB-8CcrewxyPPN_krBgzEcFMKL9tzqiLSL_Q";
+  const imageUrl = purchase.image_url?.trim() || "";
 
   const status = purchase.status;
   const collecting = status === "collecting";
@@ -50,10 +49,19 @@ export default function AccountDealCard({ purchase, role }: Props) {
           ? { href: `/purchases/${purchase.id}`, label: "Отследить заказ", outline: true }
           : { href: `/purchases/${purchase.id}`, label: "Открыть" };
 
+  const previewParticipants = purchase.participant_preview ?? [];
+  const avatarSlots = previewParticipants.slice(0, 3);
+  const pc = purchase.participant_count ?? 0;
+  const avatarExtra = Math.max(0, pc - avatarSlots.length);
+
   return (
     <article className={styles.card}>
       <div className={styles.imageWrap}>
-        <Image src={img} alt="" width={400} height={240} className={styles.image} unoptimized />
+        {imageUrl ? (
+          <Image src={imageUrl} alt="" width={400} height={240} className={styles.image} unoptimized />
+        ) : (
+          <div className={`${styles.image} ${styles.imagePlaceholder}`} role="presentation" />
+        )}
         <div className={styles.badgeWrap}>
           <span className={`${styles.badge} ${styles[`badge_${badge.variant}`]}`}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
@@ -92,19 +100,14 @@ export default function AccountDealCard({ purchase, role }: Props) {
             </span>
           ) : (
             <div className={styles.avatars}>
-              {[0, 1].map((i) => (
-                <Image
-                  key={i}
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=deal-${purchase.id}-${i}`}
-                  alt=""
-                  width={24}
-                  height={24}
-                  className={styles.avatar}
-                  unoptimized
-                />
+              {avatarSlots.map((u) => (
+                <ParticipantAvatar key={u.user_id} participant={u} size={24} className={styles.avatar} />
               ))}
-              {(purchase.participant_count ?? 0) > 2 ? (
-                <span className={styles.avatarMore}>+{(purchase.participant_count ?? 0) - 2}</span>
+              {avatarSlots.length > 0 && avatarExtra > 0 ? (
+                <span className={styles.avatarMore}>+{avatarExtra}</span>
+              ) : null}
+              {avatarSlots.length === 0 && pc > 0 ? (
+                <span className={styles.avatarFallback}>{pc} участников</span>
               ) : null}
             </div>
           )}
