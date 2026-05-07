@@ -398,6 +398,30 @@ a.btnGhost {
   border-bottom: none;
 }
 
+.userNameCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.userAvatarSlot {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userAvatarImg {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
 .mono {
   font-variant-numeric: tabular-nums;
 }

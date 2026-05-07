@@ -1,6 +1,10 @@
 const express = require("express");
 const pool = require("../config/db");
 const requireAdmin = require("../middleware/requireAdmin");
+const {
+  PARTICIPANT_PREVIEW_SQL,
+  normalizeParticipantPreview,
+} = require("../lib/participantPreview");
 const { notifyStatusChange } = require("../services/notifications");
 
 const router = express.Router();
@@ -38,6 +42,7 @@ function mapPurchase(row) {
     category: row.category != null ? String(row.category) : "",
     image_url: row.image_url != null ? String(row.image_url) : "",
     retail_price: row.retail_price != null ? String(row.retail_price) : null,
+    participant_preview: normalizeParticipantPreview(row.participant_preview),
   };
 }
 
@@ -57,7 +62,9 @@ async function fetchPurchaseById(id) {
 router.get("/users", async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, email, created_at, is_admin FROM users ORDER BY id ASC`
+      `SELECT id, name, email, created_at, is_admin,
+        NULLIF(trim(COALESCE(avatar_url, '')), '') AS avatar_url
+      FROM users ORDER BY id ASC`
     );
     return res.status(200).json(result.rows);
   } catch (error) {
@@ -105,7 +112,8 @@ router.get("/purchases", async (req, res) => {
           p.*,
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
-          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
         ORDER BY p.created_at DESC

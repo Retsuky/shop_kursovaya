@@ -4,42 +4,12 @@ const requireAuth = require("../middleware/requireAuth");
 const { createNotification, notifyStatusChange } = require("../services/notifications");
 
 const router = express.Router();
+const {
+  PARTICIPANT_PREVIEW_SQL,
+  normalizeParticipantPreview,
+} = require("../lib/participantPreview");
 
 const STATUS_FLOW = ["collecting", "payment", "supplier_order", "delivery", "completed"];
-
-const PARTICIPANT_PREVIEW_SQL = `
-  (
-    SELECT COALESCE(
-      json_agg(
-        json_build_object(
-          'user_id', s.user_id,
-          'user_name', s.user_name,
-          'email', s.email,
-          'avatar_url', s.avatar_url
-        )
-        ORDER BY s.created_at ASC
-      ),
-      '[]'::json
-    )
-    FROM (
-      SELECT *
-      FROM (
-        SELECT
-          pp.user_id,
-          u.name AS user_name,
-          u.email,
-          COALESCE(NULLIF(trim(u.avatar_url), ''), '') AS avatar_url,
-          pp.created_at
-        FROM purchase_participants pp
-        INNER JOIN users u ON u.id = pp.user_id
-        WHERE pp.purchase_id = p.id
-        ORDER BY pp.created_at DESC
-        LIMIT 3
-      ) z
-      ORDER BY z.created_at ASC
-    ) s
-  )
-`;
 
 function mapPurchase(row) {
   if (!row) return null;
@@ -66,29 +36,6 @@ function mapPurchase(row) {
     retail_price: row.retail_price != null ? String(row.retail_price) : null,
     participant_preview: normalizeParticipantPreview(row.participant_preview),
   };
-}
-
-function normalizeParticipantPreview(raw) {
-  if (!raw) {
-    return [];
-  }
-  let arr = raw;
-  if (typeof raw === "string") {
-    try {
-      arr = JSON.parse(raw);
-    } catch {
-      return [];
-    }
-  }
-  if (!Array.isArray(arr)) {
-    return [];
-  }
-  return arr.map((item) => ({
-    user_id: Number(item?.user_id),
-    user_name: item?.user_name != null ? String(item.user_name) : "",
-    email: item?.email != null ? String(item.email) : "",
-    avatar_url: item?.avatar_url != null ? String(item.avatar_url).trim() : "",
-  }));
 }
 router.get("/catalog", async (req, res) => {
   const limit = Math.min(48, Math.max(1, parseInt(String(req.query.limit), 10) || 12));

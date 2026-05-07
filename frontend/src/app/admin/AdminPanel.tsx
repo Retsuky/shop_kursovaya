@@ -22,6 +22,7 @@ type AdminUserRow = {
   email: string;
   created_at: string;
   is_admin: boolean;
+  avatar_url?: string | null;
 };
 
 type ParticipantRow = {
@@ -285,10 +286,21 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
+                  {users.map((u) => {
+                    const avatar = typeof u.avatar_url === "string" ? u.avatar_url.trim() : "";
+                    return (
                     <tr key={u.id}>
                       <td className={styles.mono}>{u.id}</td>
-                      <td>{u.name}</td>
+                      <td>
+                        <div className={styles.userNameCell}>
+                          {avatar ? (
+                            <span className={styles.userAvatarSlot}>
+                              <img src={avatar} alt="" className={styles.userAvatarImg} width={32} height={32} />
+                            </span>
+                          ) : null}
+                          <span>{u.name}</span>
+                        </div>
+                      </td>
                       <td>{u.email}</td>
                       <td>{u.is_admin ? <span className={styles.adminPill}>Админ</span> : "—"}</td>
                       <td>
@@ -297,7 +309,8 @@ export default function AdminPanel() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
             )}

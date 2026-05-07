@@ -10,6 +10,7 @@ import {
   formatTimeLeft,
   isAlmostFull,
 } from "../../lib/catalogDisplay";
+import ParticipantAvatar from "../../lib/ParticipantAvatar";
 import { STATUS_LABELS, STATUS_ORDER } from "../../lib/purchasesMeta";
 import tokens from "../components/landing/landing-tokens.module.css";
 import cardStyles from "../components/catalog/catalog-product-card.module.css";
@@ -69,8 +70,10 @@ export default function AdminProductCard({
   const imageUrl = purchase.image_url?.trim() || "";
 
   const categoryLabel = purchase.category?.trim() || "Без категории";
+  const preview = purchase.participant_preview ?? [];
+  const avatarSlots = preview.slice(0, 3);
   const participants = purchase.participant_count ?? 0;
-  const extraAv = Math.max(0, participants - 3);
+  const extraAv = Math.max(0, participants - avatarSlots.length);
   const hint = catalogOpenHint(purchase);
 
   return (
@@ -146,16 +149,8 @@ export default function AdminProductCard({
 
         {participants > 0 ? (
           <div className={cardStyles.avatars}>
-            {[0, 1, 2].map((i) => (
-              <Image
-                key={i}
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${purchase.id}-${i}`}
-                alt=""
-                width={32}
-                height={32}
-                className={cardStyles.avatar}
-                unoptimized
-              />
+            {avatarSlots.map((u) => (
+              <ParticipantAvatar key={u.user_id} participant={u} size={32} className={cardStyles.avatar} />
             ))}
             {extraAv > 0 ? <span className={cardStyles.avatarMore}>+{extraAv}</span> : null}
           </div>
