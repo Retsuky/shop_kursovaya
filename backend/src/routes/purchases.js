@@ -10,7 +10,17 @@ const {
   normalizeParticipantPreview,
 } = require("../lib/participantPreview");
 
-const STATUS_FLOW = ["collecting", "payment", "supplier_order", "delivery", "completed"];
+const PURCHASE_STATUSES = new Set(["collecting", "closed", "completed", "cancelled"]);
+const PARTICIPANT_STATUSES = new Set(["assembly", "delivery", "handed"]);
+const DELIVERY_METHODS = new Set(["pickup", "courier"]);
+const PAYMENT_METHODS = new Set(["card", "sbp"]);
+
+function normalizeParticipantStatus(raw) {
+  const s = String(raw ?? "").trim();
+  if (s === "collecting") return "assembly";
+  if (s === "completed") return "handed";
+  return s;
+}
 
 function mapPurchase(row) {
   if (!row) return null;
@@ -40,6 +50,10 @@ function mapPurchase(row) {
       row.my_quantity != null && row.my_quantity !== ""
         ? Number(row.my_quantity)
         : undefined,
+    my_participant_status:
+      row.my_participant_status != null && String(row.my_participant_status).trim() !== ""
+        ? normalizeParticipantStatus(row.my_participant_status)
+        : undefined,
     rating_avg:
       row.rating_avg != null && row.rating_avg !== ""
         ? Number(row.rating_avg)
@@ -59,7 +73,7 @@ router.get("/catalog", optionalAuth, async (req, res) => {
   const sortRaw = typeof req.query.sort === "string" ? req.query.sort : "popular";
   const sort = ["popular", "newest", "closing"].includes(sortRaw) ? sortRaw : "popular";
   const dealRaw = typeof req.query.deal === "string" ? req.query.deal : "open";
-  const deal = ["open", "active", "almost", "closed", "all"].includes(dealRaw) ? dealRaw : "open";
+  const deal = ["open", "closed", "closed_group", "all"].includes(dealRaw) ? dealRaw : "open";
 
   const categories =
     typeof req.query.categories === "string" && req.query.categories.trim()
@@ -83,23 +97,14 @@ router.get("/catalog", optionalAuth, async (req, res) => {
   }
 
   if (deal === "closed") {
-    where.push(`p.status IN ('payment','supplier_order','delivery','completed')`);
+    where.push(`p.status IN ('completed')`);
+  } else if (deal === "closed_group") {
+    where.push(`p.status IN ('closed')`);
   } else if (deal === "all") {
     /* только статус <> cancelled уже есть */
   } else {
     where.push(`p.status = 'collecting'`);
     where.push(`p.deadline > NOW()`);
-    if (deal === "active") {
-      where.push(`(
-        (SELECT COUNT(DISTINCT pp.user_id)::numeric FROM purchase_participants pp WHERE pp.purchase_id = p.id)
-        < CEIL(GREATEST(p.min_participants, 1) * 0.9)::numeric
-      )`);
-    } else if (deal === "almost") {
-      where.push(`(
-        (SELECT COUNT(DISTINCT pp.user_id)::numeric FROM purchase_participants pp WHERE pp.purchase_id = p.id)
-        >= CEIL(GREATEST(p.min_participants, 1) * 0.9)::numeric
-      )`);
-    }
   }
 
   const whereSql = where.join(" AND ");
@@ -222,6 +227,7 @@ router.get("/mine", requireAuth, async (req, res) => {
           p.*,
           u.name AS organizer_name,
           pp.quantity AS my_quantity,
+          pp.participant_status AS my_participant_status,
           (SELECT COUNT(DISTINCT px.user_id)::int FROM purchase_participants px WHERE px.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(px.quantity), 0)::int FROM purchase_participants px WHERE px.purchase_id = p.id) AS total_quantity,
           ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
@@ -239,6 +245,8 @@ router.get("/mine", requireAuth, async (req, res) => {
       joined: joined.rows.map((row) => ({
         ...mapPurchase(row),
         my_quantity: row.my_quantity != null ? Number(row.my_quantity) : undefined,
+        my_participant_status:
+          row.my_participant_status != null ? normalizeParticipantStatus(row.my_participant_status) : undefined,
       })),
     });
   } catch (error) {
@@ -283,10 +291,16 @@ router.get("/:id", async (req, res) => {
         SELECT
           pp.user_id,
           pp.quantity,
+          pp.participant_status,
+          pp.delivery_method,
+          pp.payment_method,
+          pp.delivery_address,
+          pp.delivery_comment,
           usr.name AS user_name,
           usr.email,
           COALESCE(NULLIF(trim(usr.avatar_url), ''), '') AS avatar_url,
-          pp.created_at AS joined_at
+          pp.created_at AS joined_at,
+          pp.updated_at
         FROM purchase_participants pp
         INNER JOIN users usr ON usr.id = pp.user_id
         WHERE pp.purchase_id = $1
@@ -300,11 +314,21 @@ router.get("/:id", async (req, res) => {
       participants: participantsResult.rows.map((p) => ({
         user_id: p.user_id,
         quantity: p.quantity,
+        participant_status:
+          p.participant_status != null
+            ? normalizeParticipantStatus(p.participant_status)
+            : "assembly",
+        delivery_method: p.delivery_method != null ? String(p.delivery_method) : "pickup",
+        payment_method: p.payment_method != null ? String(p.payment_method) : "card",
+        delivery_address: p.delivery_address != null ? String(p.delivery_address) : "",
+        delivery_comment: p.delivery_comment != null ? String(p.delivery_comment) : "",
         user_name: p.user_name,
         email: p.email != null ? String(p.email) : "",
         avatar_url: p.avatar_url != null ? String(p.avatar_url).trim() : "",
         joined_at:
           p.joined_at != null ? (typeof p.joined_at === "string" ? p.joined_at : p.joined_at.toISOString()) : "",
+        updated_at:
+          p.updated_at != null ? (typeof p.updated_at === "string" ? p.updated_at : p.updated_at.toISOString()) : "",
       })),
     });
   } catch (error) {
@@ -424,6 +448,9 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
   if (!nextStatus || typeof nextStatus !== "string") {
     return res.status(400).json({ message: "Укажите поле status." });
   }
+  if (!PURCHASE_STATUSES.has(nextStatus)) {
+    return res.status(400).json({ message: "Допустимы статусы: collecting, closed, completed, cancelled." });
+  }
 
   try {
     const currentResult = await pool.query("SELECT * FROM purchases WHERE id = $1", [id]);
@@ -461,22 +488,22 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       return res.status(200).json(mapPurchase(updated.rows[0]));
     }
 
-    const idx = STATUS_FLOW.indexOf(current.status);
-
-    if (idx === -1) {
-      return res.status(400).json({ message: "Текущий статус недопустим для перехода." });
-    }
-
-    if (current.status === "completed" || current.status === "cancelled") {
+    if (current.status === "cancelled") {
       return res.status(400).json({ message: "Закупка уже завершена или отменена." });
     }
+    if (current.status === "completed" && nextStatus === "completed") {
+      return res.status(200).json(mapPurchase(current));
+    }
+    if (current.status === "completed" && (nextStatus === "collecting" || nextStatus === "closed")) {
+      return res.status(400).json({ message: "Нельзя вернуть завершённую закупку на этап набора." });
+    }
 
-    const allowedNext = STATUS_FLOW[idx + 1];
-
-    if (!allowedNext || nextStatus !== allowedNext) {
-      return res.status(400).json({
-        message: `Следующий статус может быть только: ${allowedNext || "нет"}`,
-      });
+    const transitionAllowed =
+      (current.status === "collecting" && (nextStatus === "closed" || nextStatus === "completed")) ||
+      (current.status === "closed" && (nextStatus === "collecting" || nextStatus === "completed")) ||
+      current.status === nextStatus;
+    if (!transitionAllowed) {
+      return res.status(400).json({ message: "Недопустимый переход статуса." });
     }
 
     const prev = current.status;
@@ -509,14 +536,40 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
 
 router.post("/:id/join", requireAuth, async (req, res) => {
   const id = Number(req.params.id);
-  const qty = Number(req.body?.quantity);
+  const qty = 1;
+  const rawParticipantStatus =
+    req.body?.participant_status != null ? String(req.body.participant_status).trim() : "assembly";
+  const rawDeliveryMethod =
+    req.body?.delivery_method != null ? String(req.body.delivery_method).trim() : "pickup";
+  const rawPaymentMethod =
+    req.body?.payment_method != null ? String(req.body.payment_method).trim() : "card";
+  const deliveryAddress =
+    req.body?.delivery_address != null ? String(req.body.delivery_address).trim() : "";
+  const deliveryComment =
+    req.body?.delivery_comment != null ? String(req.body.delivery_comment).trim() : "";
 
   if (!Number.isInteger(id)) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
 
-  if (!Number.isInteger(qty) || qty < 1) {
-    return res.status(400).json({ message: "Укажите quantity — целое число ≥ 1." });
+  const participantStatus = normalizeParticipantStatus(rawParticipantStatus);
+  if (!PARTICIPANT_STATUSES.has(participantStatus)) {
+    return res.status(400).json({ message: "Некорректный participant_status." });
+  }
+  if (!DELIVERY_METHODS.has(rawDeliveryMethod)) {
+    return res.status(400).json({ message: "Некорректный способ получения." });
+  }
+  if (!PAYMENT_METHODS.has(rawPaymentMethod)) {
+    return res.status(400).json({ message: "Некорректный способ оплаты." });
+  }
+  if (rawDeliveryMethod === "courier" && !deliveryAddress) {
+    return res.status(400).json({ message: "Для курьерской доставки нужен адрес." });
+  }
+  if (deliveryAddress.length > 1000) {
+    return res.status(400).json({ message: "Адрес не должен превышать 1000 символов." });
+  }
+  if (deliveryComment.length > 1000) {
+    return res.status(400).json({ message: "Комментарий не должен превышать 1000 символов." });
   }
 
   try {
@@ -551,13 +604,42 @@ router.post("/:id/join", requireAuth, async (req, res) => {
 
     await pool.query(
       `
-        INSERT INTO purchase_participants (purchase_id, user_id, quantity)
-        VALUES ($1, $2, $3)
+        INSERT INTO purchase_participants (
+          purchase_id, user_id, quantity, participant_status,
+          delivery_method, payment_method, delivery_address, delivery_comment, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
         ON CONFLICT (purchase_id, user_id)
-        DO UPDATE SET quantity = EXCLUDED.quantity
+        DO UPDATE SET
+          quantity = EXCLUDED.quantity,
+          participant_status = EXCLUDED.participant_status,
+          delivery_method = EXCLUDED.delivery_method,
+          payment_method = EXCLUDED.payment_method,
+          delivery_address = EXCLUDED.delivery_address,
+          delivery_comment = EXCLUDED.delivery_comment,
+          updated_at = CURRENT_TIMESTAMP
       `,
-      [id, req.user.id, qty]
+      [
+        id,
+        req.user.id,
+        qty,
+        participantStatus,
+        rawDeliveryMethod,
+        rawPaymentMethod,
+        rawDeliveryMethod === "courier" ? deliveryAddress : "",
+        deliveryComment,
+      ]
     );
+
+    const crowd = await pool.query(
+      `SELECT COUNT(DISTINCT user_id)::int AS c FROM purchase_participants WHERE purchase_id = $1`,
+      [id]
+    );
+    const participantsCount = Number(crowd.rows[0]?.c ?? 0);
+    const minParticipants = Math.max(1, Number(purchase.min_participants ?? 1));
+    if (participantsCount >= minParticipants && purchase.status === "collecting") {
+      await pool.query(`UPDATE purchases SET status = 'closed', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [id]);
+    }
 
     try {
       const nameRes = await pool.query("SELECT name FROM users WHERE id = $1", [req.user.id]);
@@ -616,8 +698,8 @@ router.delete("/:id/join", requireAuth, async (req, res) => {
       return res.status(404).json({ message: "Закупка не найдена." });
     }
 
-    if (purchase.status !== "collecting") {
-      return res.status(400).json({ message: "Отказаться можно только пока идёт сбор заявок." });
+    if (purchase.status !== "collecting" && purchase.status !== "closed") {
+      return res.status(400).json({ message: "Отказаться можно только пока идёт сбор заявок или набор закрыт." });
     }
 
     const deleted = await pool.query(
@@ -627,6 +709,16 @@ router.delete("/:id/join", requireAuth, async (req, res) => {
 
     if (!deleted.rows[0]) {
       return res.status(400).json({ message: "Вы не записаны участником этой закупки." });
+    }
+
+    const crowd = await pool.query(
+      `SELECT COUNT(DISTINCT user_id)::int AS c FROM purchase_participants WHERE purchase_id = $1`,
+      [id]
+    );
+    const participantsCount = Number(crowd.rows[0]?.c ?? 0);
+    const minParticipants = Math.max(1, Number(purchase.min_participants ?? 1));
+    if (participantsCount < minParticipants && purchase.status === "closed") {
+      await pool.query(`UPDATE purchases SET status = 'collecting', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [id]);
     }
 
     try {

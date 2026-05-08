@@ -44,10 +44,37 @@ async function initDb() {
       purchase_id INTEGER NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       quantity INTEGER NOT NULL CHECK (quantity > 0),
+      participant_status VARCHAR(32) NOT NULL DEFAULT 'assembly',
+      delivery_method VARCHAR(16) NOT NULL DEFAULT 'pickup',
+      payment_method VARCHAR(16) NOT NULL DEFAULT 'card',
+      delivery_address TEXT NOT NULL DEFAULT '',
+      delivery_comment TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(purchase_id, user_id)
     )
   `);
+  await pool.query(
+    `ALTER TABLE purchase_participants ADD COLUMN IF NOT EXISTS participant_status VARCHAR(32) NOT NULL DEFAULT 'assembly'`
+  );
+  await pool.query(
+    `ALTER TABLE purchase_participants ALTER COLUMN participant_status SET DEFAULT 'assembly'`
+  );
+  await pool.query(
+    `ALTER TABLE purchase_participants ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(16) NOT NULL DEFAULT 'pickup'`
+  );
+  await pool.query(
+    `ALTER TABLE purchase_participants ADD COLUMN IF NOT EXISTS payment_method VARCHAR(16) NOT NULL DEFAULT 'card'`
+  );
+  await pool.query(
+    `ALTER TABLE purchase_participants ADD COLUMN IF NOT EXISTS delivery_address TEXT NOT NULL DEFAULT ''`
+  );
+  await pool.query(
+    `ALTER TABLE purchase_participants ADD COLUMN IF NOT EXISTS delivery_comment TEXT NOT NULL DEFAULT ''`
+  );
+  await pool.query(
+    `ALTER TABLE purchase_participants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
+  );
 
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_purchases_organizer ON purchases(organizer_id)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_purchases_status ON purchases(status)`);

@@ -21,6 +21,10 @@ type DealRow = { purchase: Purchase; role: "organizer" | "participant" };
 
 type Tab = "active" | "archive" | "all";
 
+function isParticipantActive(p: Purchase & { my_quantity?: number }) {
+  return ACTIVE.has(String(p.status)) && String(p.my_participant_status ?? "") !== "handed";
+}
+
 export default function AccountOrdersView() {
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -96,10 +100,10 @@ export default function AccountOrdersView() {
   }, [mine]);
 
   const filtered = useMemo(() => {
-    return merged.filter(({ purchase: p }) => {
+    return merged.filter(({ purchase: p, role }) => {
       const st = String(p.status);
       if (tab === "active") {
-        return ACTIVE.has(st);
+        return role === "participant" ? isParticipantActive(p) : ACTIVE.has(st);
       }
       if (tab === "archive") {
         return st === "completed" || st === "cancelled";
@@ -109,7 +113,9 @@ export default function AccountOrdersView() {
   }, [merged, tab]);
 
   const counts = useMemo(() => {
-    const active = merged.filter(({ purchase: p }) => ACTIVE.has(String(p.status))).length;
+    const active = merged.filter(({ purchase: p, role }) =>
+      role === "participant" ? isParticipantActive(p) : ACTIVE.has(String(p.status))
+    ).length;
     const archive = merged.filter(
       ({ purchase: p }) => p.status === "completed" || p.status === "cancelled"
     ).length;

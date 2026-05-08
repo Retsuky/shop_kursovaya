@@ -5,9 +5,7 @@
 
 const STATUS_RU = {
   collecting: "Сбор заявок",
-  payment: "Оплата",
-  supplier_order: "Заказ у поставщика",
-  delivery: "Доставка и выдача",
+  closed: "Набор закрыт",
   completed: "Завершена",
   cancelled: "Отменена",
 };
