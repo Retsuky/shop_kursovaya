@@ -98,42 +98,6 @@
   background: rgba(107, 216, 203, 0.12);
 }
 
-.socialProof {
-  margin-top: 32px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.avatarStack {
-  display: flex;
-}
-
-.stackAvatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 9999px;
-  border: 2px solid var(--cb-white);
-  margin-left: -12px;
-  object-fit: cover;
-}
-
-.stackAvatar:first-child {
-  margin-left: 0;
-}
-
-.socialText {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--cb-on-surface-variant);
-}
-
-.socialBold {
-  color: var(--cb-primary);
-  font-weight: 700;
-}
-
 .visual {
   position: relative;
 }

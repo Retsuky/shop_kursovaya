@@ -17,7 +17,29 @@ export type CartLine = {
   pickupAddress?: string;
   /** ISO-дата окончания сбора заявок */
   deadline?: string;
+  /** Снимок закупки: для подписей «групповая цена» в оформлении */
+  purchaseStatus?: string;
+  minParticipants?: number;
+  participantCount?: number;
 };
+
+/**
+ * Для строки корзины: действует ли групповая цена (минимум набран или закупка уже не в сборе).
+ * Без полей-снимка (старые корзины) — считаем, что нет, пока пользователь не обновит состав.
+ */
+export function isCartLineGroupMinimumMet(line: CartLine): boolean {
+  if (line.purchaseStatus === "cancelled") {
+    return false;
+  }
+  if (line.purchaseStatus != null && line.purchaseStatus !== "collecting") {
+    return true;
+  }
+  if (line.minParticipants == null || line.participantCount == null) {
+    return false;
+  }
+  const m = Math.max(1, line.minParticipants);
+  return line.participantCount >= m;
+}
 
 export function getCart(): CartLine[] {
   if (typeof window === "undefined") {
@@ -68,6 +90,11 @@ export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
   const city = purchase.city?.trim() || undefined;
   const pickupAddress = purchase.pickup_address?.trim() || undefined;
   const deadline = purchase.deadline?.trim() || undefined;
+  const groupSnapshot = {
+    purchaseStatus: String(purchase.status),
+    minParticipants: purchase.min_participants,
+    participantCount: purchase.participant_count,
+  };
   const idx = cart.findIndex((l) => l.purchaseId === purchase.id);
   if (idx >= 0) {
     cart[idx] = {
@@ -80,6 +107,7 @@ export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
       city,
       pickupAddress,
       deadline,
+      ...groupSnapshot,
     };
   } else {
     cart.push({
@@ -92,6 +120,7 @@ export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
       city,
       pickupAddress,
       deadline,
+      ...groupSnapshot,
     });
   }
   persist(cart);
