@@ -87,9 +87,9 @@ export default function MarketingHeader() {
               <span className={styles.cartBadge}>{cartCount > 99 ? "99+" : cartCount}</span>
             ) : null}
           </Link>
-          <button type="button" className={styles.iconBtn} aria-label="Уведомления">
+          <Link href="/account/notifications" className={styles.iconBtn} aria-label="Уведомления">
             <span className={`material-symbols-outlined ${styles.icon}`}>notifications</span>
-          </button>
+          </Link>
 
           {session ? (
             <div className={styles.userCluster}>

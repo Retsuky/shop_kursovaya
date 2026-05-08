@@ -308,15 +308,11 @@ export default function CheckoutView() {
                   </div>
                 </label>
               </div>
-              <div className={styles.deliveryPanel}>
+                  
                 {delivery === "pickup" ? (
                   <>
-                    <p className={styles.deliveryPanelLead}>
-                      Пункт выдачи задаёт <strong>организатор</strong> в карточке закупки. Ниже — то, что было
-                      известно при добавлении в корзину: город, адрес (если указал организатор) и срок сбора заявок.
-                      Уточнить время и детали можно на странице сделки.
-                    </p>
-                    <ul className={styles.deliveryDealList}>
+                
+                    <ul className={`${styles.deliveryDealList}`}>
                       {lines.map((line) => {
                         const deadlineLabel = formatDealDeadline(line.deadline);
                         return (
@@ -359,10 +355,7 @@ export default function CheckoutView() {
                   </>
                 ) : (
                   <>
-                    <p className={styles.deliveryPanelLead}>
-                      Укажите полный адрес — по нему организатор или курьер сможет связаться с вами после сбора
-                      группы. Стоимость и согласование времени доставки — на странице сделки.
-                    </p>
+                  
                     <div className={styles.courierFields}>
                       <label className={styles.courierLabel} htmlFor="checkout-courier-address">
                         Адрес доставки
@@ -418,7 +411,7 @@ export default function CheckoutView() {
                     </ul>
                   </>
                 )}
-              </div>
+          
             </section>
 
             <section className={styles.section} aria-labelledby="checkout-pay">

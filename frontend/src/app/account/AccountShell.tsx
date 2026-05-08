@@ -18,7 +18,7 @@ type MinePayload = {
   joined: (Purchase & { my_quantity?: number })[];
 };
 
-type NavKey = "profile" | "orders" | "notifications" | "settings" | "invite";
+type NavKey = "profile" | "orders" | "notifications" | "settings";
 
 function navKeyFromPath(path: string): NavKey {
   if (path.startsWith("/account/orders")) {
@@ -29,9 +29,6 @@ function navKeyFromPath(path: string): NavKey {
   }
   if (path.startsWith("/account/settings")) {
     return "settings";
-  }
-  if (path.startsWith("/account/invite")) {
-    return "invite";
   }
   return "profile";
 }
@@ -160,11 +157,6 @@ export default function AccountShell({ children }: Props) {
                 <Link href="/account/settings" className={linkClass("settings")}>
                   <span className={`material-symbols-outlined ${styles.sideIcon}`}>settings</span>
                   Настройки
-                </Link>
-                <div className={styles.divider} />
-                <Link href="/account/invite" className={linkClass("invite")}>
-                  <span className={`material-symbols-outlined ${styles.sideIcon}`}>card_giftcard</span>
-                  Пригласить друга
                 </Link>
               </nav>
             </div>
