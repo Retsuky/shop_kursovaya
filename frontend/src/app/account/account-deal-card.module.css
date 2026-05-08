@@ -61,8 +61,9 @@
 }
 
 .badge_ship {
-  background: rgba(0, 104, 95, 0.15);
-  color: #00685f;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
 }
 
 .body {

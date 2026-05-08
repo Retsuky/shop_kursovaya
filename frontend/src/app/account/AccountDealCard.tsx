@@ -19,15 +19,11 @@ export default function AccountDealCard({ purchase, role }: Props) {
 
   const status = purchase.status;
   const collecting = status === "collecting";
-  const orderPlaced =
-    status === "payment" || status === "supplier_order" || status === "delivery";
+  const orderPlaced = status === "closed" || status === "completed";
 
   let badge: { text: string; variant: "wait" | "order" | "ship" };
   if (orderPlaced) {
-    badge =
-      status === "delivery"
-        ? { text: "ДОСТАВКА", variant: "ship" }
-        : { text: "ЗАКАЗ ОФОРМЛЕН", variant: "order" };
+    badge = status === "closed" ? { text: "НАБОР ЗАКРЫТ", variant: "ship" } : { text: "ЗАВЕРШЕНА", variant: "order" };
   } else if (collecting) {
     badge = { text: "ОЖИДАНИЕ УЧАСТНИКОВ", variant: "wait" };
   } else {
@@ -43,16 +39,24 @@ export default function AccountDealCard({ purchase, role }: Props) {
   const cta: { href: string; label: string; outline?: boolean } =
     role === "organizer" && collecting
       ? { href: `/purchases/${purchase.id}`, label: "Ускорить сбор" }
-      : orderPlaced && status === "delivery"
-        ? { href: `/purchases/${purchase.id}`, label: "Отследить", outline: true }
-        : orderPlaced
-          ? { href: `/purchases/${purchase.id}`, label: "Отследить заказ", outline: true }
+      : orderPlaced
+          ? { href: `/purchases/${purchase.id}`, label: "Открыть", outline: true }
           : { href: `/purchases/${purchase.id}`, label: "Открыть" };
 
   const previewParticipants = purchase.participant_preview ?? [];
   const avatarSlots = previewParticipants.slice(0, 3);
   const pc = purchase.participant_count ?? 0;
   const avatarExtra = Math.max(0, pc - avatarSlots.length);
+  const participantStatusLabelMap: Record<string, string> = {
+    assembly: "Сборка",
+    delivery: "Доставка",
+    handed: "Вручен",
+  };
+  const participantDeliveryStatus =
+    role === "participant"
+      ? participantStatusLabelMap[String(purchase.my_participant_status ?? "").trim()] ??
+        (status === "completed" ? "Вручен" : "Сборка")
+      : null;
 
   return (
     <article className={styles.card}>
@@ -96,7 +100,7 @@ export default function AccountDealCard({ purchase, role }: Props) {
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
                 local_shipping
               </span>
-              {status === "delivery" ? "В пути к точке выдачи" : "Обработка заказа"}
+              {role === "participant" ? participantDeliveryStatus : status === "closed" ? "Заказ в обработке" : "Сделка завершена"}
             </span>
           ) : (
             <div className={styles.avatars}>

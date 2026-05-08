@@ -230,7 +230,7 @@ export default function AccountProfileContent() {
     [mine.organized]
   );
   const activeJoined = useMemo(
-    () => mine.joined.filter((p) => ACTIVE.has(String(p.status))),
+    () => mine.joined.filter((p) => ACTIVE.has(String(p.status)) && String(p.my_participant_status ?? "") !== "handed"),
     [mine.joined]
   );
 

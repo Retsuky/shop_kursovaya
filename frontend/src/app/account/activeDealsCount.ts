@@ -1,6 +1,14 @@
 import type { Purchase } from "../../lib/purchasesMeta";
 
-export const ACTIVE = new Set(["collecting", "payment", "supplier_order", "delivery"]);
+export const ACTIVE = new Set(["collecting", "closed"]);
+
+function isParticipantActive(p: Purchase & { my_quantity?: number }): boolean {
+  const st = String(p.status);
+  if (!ACTIVE.has(st)) {
+    return false;
+  }
+  return String(p.my_participant_status ?? "") !== "handed";
+}
 
 /** Число сделок пользователя с «живым» статусом (организатор + участник, без двойного счёта по id). */
 export function countDistinctActiveDealIds(
@@ -14,7 +22,7 @@ export function countDistinctActiveDealIds(
     }
   }
   for (const p of joined) {
-    if (ACTIVE.has(String(p.status))) {
+    if (isParticipantActive(p)) {
       ids.add(p.id);
     }
   }
