@@ -1,14 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import type { AuthUser } from "./auth";
 
-export function userAvatarSrc(user: Pick<AuthUser, "email" | "avatar_url">): string {
+export function userAvatarSrc(user: Pick<AuthUser, "avatar_url">): string {
   const u = user.avatar_url?.trim();
   if (u) {
     return u;
   }
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.email)}`;
+  return "";
+}
+
+function avatarInitial(user: Pick<AuthUser, "name" | "email">): string {
+  const source = user.name?.trim() || user.email?.trim() || "?";
+  return source.charAt(0).toUpperCase();
 }
 
 export function UserAvatar({
@@ -16,14 +20,34 @@ export function UserAvatar({
   size,
   className,
 }: {
-  user: Pick<AuthUser, "email" | "avatar_url">;
+  user: Pick<AuthUser, "name" | "email" | "avatar_url">;
   size: number;
   className?: string;
 }) {
   const src = userAvatarSrc(user);
-  if (src.includes("api.dicebear.com")) {
-    return <Image src={src} alt="" width={size} height={size} className={className} unoptimized />;
+  if (src) {
+    return <img src={src} alt="" width={size} height={size} className={className} />;
   }
 
-  return <img src={src} alt="" width={size} height={size} className={className} />;
+  return (
+    <div
+      className={className}
+      style={{
+        width: size,
+        height: size,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #008378 0%, #00685f 100%)",
+        color: "#f4fffc",
+        fontWeight: 800,
+        fontSize: Math.max(12, Math.round(size * 0.44)),
+        userSelect: "none",
+      }}
+      aria-hidden
+    >
+      {avatarInitial(user)}
+    </div>
+  );
 }

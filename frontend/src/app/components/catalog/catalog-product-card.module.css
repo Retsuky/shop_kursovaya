@@ -107,6 +107,39 @@
   color: #64748b;
 }
 
+.ratingRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -4px;
+}
+
+.ratingStars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.starFilled,
+.starEmpty {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.starFilled {
+  color: #c89d00;
+}
+
+.starEmpty {
+  color: #b9c3d3;
+}
+
+.ratingText {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
 .joinedBanner {
   display: inline-flex;
   align-items: center;

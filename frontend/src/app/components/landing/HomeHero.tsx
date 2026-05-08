@@ -17,8 +17,8 @@ export default function HomeHero() {
             <span className={styles.titleAccent}>экономьте больше</span>
           </h1>
           <p className={styles.lead}>
-            Объединяйтесь с соседями и сообществом, чтобы покупать любимые товары по оптовым ценам.
-            Коллективная покупательная способность с доставкой до двери.
+            Объединяйтесь, чтобы покупать любимые товары по оптовым ценам.
+            Коллективные покупки с доставкой до двери.
           </p>
           <div className={styles.ctaRow}>
             <Link href="/catalog" className={styles.btnJoin}>

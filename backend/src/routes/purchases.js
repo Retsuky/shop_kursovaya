@@ -132,6 +132,8 @@ router.get("/catalog", optionalAuth, async (req, res) => {
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          (SELECT COALESCE(ROUND(AVG(pr.rating)::numeric, 1), 0)::numeric FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_avg,
+          (SELECT COUNT(*)::int FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_count,
           ${PARTICIPANT_PREVIEW_SQL} AS participant_preview,
           (
             SELECT ppv.quantity::int
@@ -176,6 +178,8 @@ router.get("/", async (req, res) => {
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          (SELECT COALESCE(ROUND(AVG(pr.rating)::numeric, 1), 0)::numeric FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_avg,
+          (SELECT COUNT(*)::int FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_count,
           ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id

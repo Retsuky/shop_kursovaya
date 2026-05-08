@@ -30,6 +30,15 @@ type AdminPurchaseDetail = {
 };
 
 const ALL_STATUSES: PurchaseStatus[] = [...STATUS_ORDER, "cancelled"];
+const CATALOG_CATEGORIES = [
+  "Электроника",
+  "Дом и уют",
+  "Одежда и обувь",
+  "Мода",
+  "Фитнес",
+  "Аксессуары",
+  "Дом и кухня",
+];
 
 function toDatetimeLocal(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -204,6 +213,7 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
 
   const title =
     mode === "new" ? "Добавить товар в каталог" : `Редактировать товар #${purchaseId ?? ""}`;
+  const categoryKnown = CATALOG_CATEGORIES.includes(form.category);
 
   return (
     <div className={`${tokens.root} ${homeLanding.landing}`}>
@@ -321,10 +331,25 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
               </label>
               <label className={styles.field}>
                 Категория
-                <input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                  required
+                >
+                  <option value="" disabled>
+                    Выберите категорию
+                  </option>
+                  {!categoryKnown && form.category ? (
+                    <option value={form.category}>{form.category} (текущее значение)</option>
+                  ) : null}
+                  {CATALOG_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
                 <span className={styles.fieldHint}>
-                  Если в каталоге включены фильтры по категориям, пустое поле скроет товар из выборки — укажите, например,
-                  «Электроника».
+                  Категория выбирается из тех же значений, что и фильтры в каталоге.
                 </span>
               </label>
               <label className={styles.fieldFull}>

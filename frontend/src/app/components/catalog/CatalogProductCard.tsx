@@ -45,6 +45,9 @@ export default function CatalogProductCard({ purchase, alreadyJoined = false }: 
   const imageUrl = purchase.image_url?.trim() || "";
 
   const categoryLabel = purchase.category?.trim() || "Без категории";
+  const ratingValue = Number(purchase.rating_avg ?? 0);
+  const ratingCount = Number(purchase.rating_count ?? 0);
+  const filledStars = Math.max(0, Math.min(5, Math.round(Number.isFinite(ratingValue) ? ratingValue : 0)));
   const ctaLabel = alreadyJoined
     ? "Открыть заявку"
     : almost && collecting
@@ -92,6 +95,16 @@ export default function CatalogProductCard({ purchase, alreadyJoined = false }: 
       <div className={styles.body}>
         <h2 className={styles.name}>{purchase.title}</h2>
         <p className={styles.category}>{categoryLabel}</p>
+        <div className={styles.ratingRow} aria-label={ratingCount > 0 ? `Рейтинг ${ratingValue} из 5` : "Пока нет отзывов"}>
+          <span className={styles.ratingStars}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i} className={i < filledStars ? styles.starFilled : styles.starEmpty}>
+                {i < filledStars ? "★" : "☆"}
+              </span>
+            ))}
+          </span>
+          <span className={styles.ratingText}>{ratingCount > 0 ? `${ratingCount}` : "0"}</span>
+        </div>
         {alreadyJoined ? (
           <div className={styles.joinedBanner}>
             <span className={`material-symbols-outlined ${styles.joinedIcon}`}>task_alt</span>

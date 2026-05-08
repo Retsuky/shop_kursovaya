@@ -145,7 +145,7 @@ export default function PurchaseDetailStitch({
                   ))}
                 </div>
                 <span className={styles.reviewsHint}>
-                  {ratingCount > 0 ? `${avgRounded} · отзывов: ${ratingCount}` : "Пока нет отзывов"}
+                  {ratingCount > 0 ? `отзывов: ${ratingCount}` : "Пока нет отзывов"}
                 </span>
               </div>
               <p className={styles.lead}>
@@ -427,21 +427,21 @@ export default function PurchaseDetailStitch({
                   <span className={`material-symbols-outlined ${styles.whyIcon}`}>verified</span>
                   <div>
                     <strong>Проверенное качество</strong>
-                    <span>Групповые закупки напрямую у поставщиков и проверенных организаторов.</span>
+                    <span>Отправитель ручается за качество товара</span>
                   </div>
                 </li>
                 <li className={styles.whyItem}>
                   <span className={`material-symbols-outlined ${styles.whyIcon}`}>group_work</span>
                   <div>
                     <strong>Сила в количестве</strong>
-                    <span>Чем больше участников, тем выгоднее цена для каждого.</span>
+                    <span>Чем больше участников, тем выгоднее цена для каждого</span>
                   </div>
                 </li>
                 <li className={styles.whyItem}>
                   <span className={`material-symbols-outlined ${styles.whyIcon}`}>local_shipping</span>
                   <div>
-                    <strong>Совместная выдача</strong>
-                    <span>Один пункт выдачи для всей группы — удобно и экологичнее.</span>
+                    <strong>Безопасность</strong>
+                    <span>Отправитель не получит деньги до доставки товара</span>
                   </div>
                 </li>
               </ul>

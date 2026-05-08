@@ -20,7 +20,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "CoBuy — совместные покупки",
-  description: "Объединяйтесь с соседями и сообществом, покупайте по оптовым ценам.",
+  description: "Объединяйтесь, чтобы покупать любимые товары по оптовым ценам.",
 };
 
 export default function RootLayout({

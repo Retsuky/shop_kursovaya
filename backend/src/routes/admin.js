@@ -143,7 +143,12 @@ router.get("/purchases/:id", async (req, res) => {
 
     const participantsResult = await pool.query(
       `
-        SELECT pp.user_id, pp.quantity, usr.name AS user_name, usr.email AS user_email
+        SELECT
+          pp.user_id,
+          pp.quantity,
+          usr.name AS user_name,
+          usr.email AS user_email,
+          NULLIF(trim(COALESCE(usr.avatar_url, '')), '') AS avatar_url
         FROM purchase_participants pp
         INNER JOIN users usr ON usr.id = pp.user_id
         WHERE pp.purchase_id = $1
@@ -156,6 +161,7 @@ router.get("/purchases/:id", async (req, res) => {
       user_id: p.user_id,
       user_name: p.user_name,
       user_email: p.user_email,
+      avatar_url: p.avatar_url,
       quantity: p.quantity != null ? Number(p.quantity) : 0,
     }));
 

@@ -29,6 +29,7 @@ type ParticipantRow = {
   user_id: number;
   user_name: string;
   user_email: string;
+  avatar_url?: string | null;
   quantity: number;
 };
 
@@ -198,8 +199,7 @@ export default function AdminPanel() {
           <p className={styles.badge}>Администрирование</p>
           <h1 className={styles.title}>Панель администратора</h1>
           <p className={styles.subtitle}>
-            Товары на витрине показаны карточками как в каталоге. Добавление — отдельная страница. Редактирование — по
-            кнопке на карточке. Отклики участников — в модальном окне.
+            Админ панель для управления пользователями и закупками
           </p>
         </header>
 
@@ -242,10 +242,6 @@ export default function AdminPanel() {
                 </Link>
               </div>
             </div>
-            <p className={styles.muted} style={{ marginTop: -12, marginBottom: 20 }}>
-              На главной витрине по умолчанию только «Сбор заявок» и срок в будущем. Статусы вроде «Оплата» или
-              «Завершена» смотрите в каталоге с фильтром «Все» или «Выкуплено».
-            </p>
 
             {loading ? (
               <p className={styles.muted}>Загрузка…</p>
@@ -357,10 +353,6 @@ export default function AdminPanel() {
                 <p className={styles.alert}>{participantsError}</p>
               ) : participantsDetail ? (
                 <>
-                  <p className={styles.organizerNote}>
-                    <strong>Организатор</strong> (ведёт сделку, в списке откликнувшихся не отображается):{" "}
-                    {participantsDetail.organizer.name} · id {participantsDetail.organizer.id}
-                  </p>
                   {participantsDetail.participants.length === 0 ? (
                     <p className={styles.muted}>
                       Пока никто не присоединился к этой закупке — ни одного участника в группе.
@@ -379,7 +371,19 @@ export default function AdminPanel() {
                         <tbody>
                           {participantsDetail.participants.map((row) => (
                             <tr key={row.user_id}>
-                              <td>{row.user_name}</td>
+                              <td>
+                                <div className={styles.participantUserCell}>
+                                  {row.avatar_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={row.avatar_url} alt="" className={styles.participantAvatarImg} />
+                                  ) : (
+                                    <span className={styles.participantAvatarFallback} aria-hidden>
+                                      {row.user_name?.trim()?.charAt(0)?.toUpperCase() || "?"}
+                                    </span>
+                                  )}
+                                  <span>{row.user_name}</span>
+                                </div>
+                              </td>
                               <td>{row.user_email}</td>
                               <td className={styles.mono}>{row.user_id}</td>
                               <td className={styles.mono}>{row.quantity}</td>
