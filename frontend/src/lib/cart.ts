@@ -54,14 +54,16 @@ export function getCart(): CartLine[] {
     if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed.filter(
-      (row): row is CartLine =>
-        row != null &&
-        typeof row === "object" &&
-        typeof (row as CartLine).purchaseId === "number" &&
-        typeof (row as CartLine).quantity === "number" &&
-        (row as CartLine).quantity > 0
-    );
+    return parsed
+      .filter(
+        (row): row is CartLine =>
+          row != null &&
+          typeof row === "object" &&
+          typeof (row as CartLine).purchaseId === "number" &&
+          typeof (row as CartLine).quantity === "number" &&
+          (row as CartLine).quantity > 0
+      )
+      .map((line) => ({ ...line, quantity: 1 }));
   } catch {
     return [];
   }
@@ -84,7 +86,7 @@ export function clearCart() {
 }
 
 export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
-  const q = Math.max(1, Math.floor(quantity));
+  const q = 1;
   const cart = getCart();
   const imageUrl = purchase.image_url?.trim() ?? "";
   const city = purchase.city?.trim() || undefined;
@@ -99,7 +101,7 @@ export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
   if (idx >= 0) {
     cart[idx] = {
       ...cart[idx],
-      quantity: cart[idx].quantity + q,
+      quantity: 1,
       title: purchase.title,
       productName: purchase.product_name,
       unitPrice: resolvePurchaseUnitPriceRaw(purchase),
@@ -127,17 +129,13 @@ export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
 }
 
 export function updateCartLineQuantity(purchaseId: number, quantity: number) {
-  const q = Math.floor(quantity);
   const cart = getCart();
   const i = cart.findIndex((l) => l.purchaseId === purchaseId);
   if (i < 0) {
     return;
   }
-  if (q < 1) {
-    cart.splice(i, 1);
-  } else {
-    cart[i] = { ...cart[i], quantity: q };
-  }
+  void quantity;
+  cart[i] = { ...cart[i], quantity: 1 };
   persist(cart);
 }
 
@@ -170,7 +168,7 @@ export function subscribeToCartChanges(callback: () => void) {
 }
 
 export function canReserveInCart(purchase: Purchase): boolean {
-  if (purchase.status !== "collecting") {
+  if (purchase.status !== "collecting" && purchase.status !== "closed") {
     return false;
   }
   return new Date(purchase.deadline).getTime() > Date.now();

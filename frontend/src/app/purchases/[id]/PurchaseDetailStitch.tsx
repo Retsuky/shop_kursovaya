@@ -39,8 +39,6 @@ export type PurchaseDetailStitchProps = {
   session: AuthSession | null;
   isOrganizer: boolean;
   myParticipant: StitchParticipant | undefined;
-  qty: string;
-  setQty: (v: string) => void;
   pending: boolean;
   actionError: string;
   deadlinePassed: boolean;
@@ -59,8 +57,6 @@ export default function PurchaseDetailStitch({
   session,
   isOrganizer,
   myParticipant,
-  qty,
-  setQty,
   pending,
   actionError,
   deadlinePassed,
@@ -85,7 +81,9 @@ export default function PurchaseDetailStitch({
   const m = Math.max(1, purchase.min_participants ?? 1);
   const needPeople = Math.max(0, m - c);
   const collecting = purchase.status === "collecting";
-  const showJoinUi = !isOrganizer && collecting && !deadlinePassed;
+  const closed = purchase.status === "closed";
+  const canNewJoin = !isOrganizer && collecting && !deadlinePassed;
+  const canManageOwnParticipation = !isOrganizer && (collecting || closed) && !deadlinePassed;
   const recentForAvatars = [...participants]
     .filter((p) => p.joined_at)
     .sort((a, b) => new Date(b.joined_at!).getTime() - new Date(a.joined_at!).getTime())
@@ -245,20 +243,9 @@ export default function PurchaseDetailStitch({
 
               {deadlinePassed && collecting ? <p className={styles.warning}>Срок сбора истёк — новые заявки недоступны.</p> : null}
 
-              {showJoinUi && session && !myParticipant ? (
+              {canNewJoin && session && !myParticipant ? (
                 <form onSubmit={onJoin}>
-                  <div className={styles.qtyRow}>
-                    <label htmlFor="join-qty">Количество</label>
-                    <input
-                      id="join-qty"
-                      className={styles.qtyInput}
-                      type="number"
-                      min={1}
-                      value={qty}
-                      onChange={(e) => setQty(e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.actions} style={{ marginTop: 12 }}>
+                  <div className={styles.actions}>
                     <button type="submit" className={styles.btnCoral} disabled={pending}>
                       Присоединиться к сделке
                     </button>
@@ -266,13 +253,13 @@ export default function PurchaseDetailStitch({
                 </form>
               ) : null}
 
-              {showJoinUi && session && myParticipant ? (
+              {canManageOwnParticipation && session && myParticipant ? (
                 <button type="button" className={styles.btnGhost} disabled={pending} onClick={onLeave}>
                   Отказаться от участия
                 </button>
               ) : null}
 
-              {showJoinUi && !session ? (
+              {canNewJoin && !session ? (
                 <>
                   <Link href="/" className={styles.btnCoral}>
                     Войти, чтобы присоединиться
@@ -284,7 +271,7 @@ export default function PurchaseDetailStitch({
                 </>
               ) : null}
 
-              {!collecting || deadlinePassed ? (
+              {(!collecting && !closed) || deadlinePassed ? (
                 <Link href="/catalog" className={styles.btnCoral}>
                   Смотреть другие сделки
                 </Link>
@@ -295,9 +282,9 @@ export default function PurchaseDetailStitch({
                 Пригласить друзей
               </button>
 
-              {collecting && !deadlinePassed ? (
+              {(collecting || closed) && !deadlinePassed ? (
                 <div className={styles.cartSlot}>
-                  <AddToCartButton purchase={purchase} />
+                  <AddToCartButton purchase={purchase} alreadyJoined={Boolean(myParticipant)} />
                 </div>
               ) : null}
             </div>

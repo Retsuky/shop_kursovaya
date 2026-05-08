@@ -41,7 +41,6 @@ export default function PurchaseDetailPage() {
   const [error, setError] = useState("");
   const [session, setSession] = useState<AuthSession | null>(null);
 
-  const [qty, setQty] = useState("1");
   const [actionError, setActionError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -163,18 +162,11 @@ export default function PurchaseDetailPage() {
       return;
     }
 
-    const q = Number(qty);
-
-    if (!Number.isInteger(q) || q < 1) {
-      setActionError("Укажите количество — целое число ≥ 1.");
-      return;
-    }
-
     setActionError("");
     setPending(true);
 
     try {
-      await api.post(`/purchases/${purchaseId}/join`, { quantity: q });
+      await api.post(`/purchases/${purchaseId}/join`, { quantity: 1 });
       await loadPurchase();
     } catch (e) {
       if (axios.isAxiosError(e)) {
@@ -259,8 +251,6 @@ export default function PurchaseDetailPage() {
       session={session}
       isOrganizer={Boolean(isOrganizer)}
       myParticipant={myParticipant}
-      qty={qty}
-      setQty={setQty}
       pending={pending}
       actionError={actionError}
       deadlinePassed={deadlinePassed}
