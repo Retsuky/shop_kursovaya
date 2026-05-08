@@ -53,6 +53,12 @@ function iconForType(type: string, title: string): string {
     }
     return "trending_flat";
   }
+  if (type === "delivery_status_change") {
+    return "local_shipping";
+  }
+  if (type === "group_discount_ready") {
+    return "groups";
+  }
   return "campaign";
 }
 

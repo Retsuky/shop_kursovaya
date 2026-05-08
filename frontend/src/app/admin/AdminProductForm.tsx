@@ -295,7 +295,7 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                Цена за ед., ₽
+                Цена со скидкой, ₽
                 <input
                   value={form.unit_price}
                   onChange={(e) => setForm((f) => ({ ...f, unit_price: e.target.value }))}
@@ -303,13 +303,21 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                Мин. участников
+                Участников для скидки
                 <input
                   type="number"
                   min={1}
                   value={form.min_participants}
                   onChange={(e) => setForm((f) => ({ ...f, min_participants: e.target.value }))}
                   required
+                />
+              </label>
+              <label className={styles.field}>
+                Цена без скидки, ₽ (необяз.)
+                <input
+                  value={form.retail_price}
+                  onChange={(e) => setForm((f) => ({ ...f, retail_price: e.target.value }))}
+                  placeholder="—"
                 />
               </label>
               <label className={styles.field}>
@@ -321,14 +329,7 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                   required
                 />
               </label>
-              <label className={styles.field}>
-                Розница, ₽ (необяз.)
-                <input
-                  value={form.retail_price}
-                  onChange={(e) => setForm((f) => ({ ...f, retail_price: e.target.value }))}
-                  placeholder="—"
-                />
-              </label>
+
               <label className={styles.field}>
                 Категория
                 <select

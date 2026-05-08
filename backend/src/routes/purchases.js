@@ -2,7 +2,11 @@ const express = require("express");
 const pool = require("../config/db");
 const requireAuth = require("../middleware/requireAuth");
 const optionalAuth = require("../middleware/optionalAuth");
-const { createNotification, notifyStatusChange } = require("../services/notifications");
+const {
+  createNotification,
+  notifyStatusChange,
+  notifyGroupDiscountReached,
+} = require("../services/notifications");
 
 const router = express.Router();
 const {
@@ -639,6 +643,11 @@ router.post("/:id/join", requireAuth, async (req, res) => {
     const minParticipants = Math.max(1, Number(purchase.min_participants ?? 1));
     if (participantsCount >= minParticipants && purchase.status === "collecting") {
       await pool.query(`UPDATE purchases SET status = 'closed', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [id]);
+      try {
+        await notifyGroupDiscountReached(pool, id, []);
+      } catch (notifyErr) {
+        console.error("Notify group discount reached:", notifyErr);
+      }
     }
 
     try {

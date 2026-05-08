@@ -5,7 +5,10 @@ const {
   PARTICIPANT_PREVIEW_SQL,
   normalizeParticipantPreview,
 } = require("../lib/participantPreview");
-const { notifyStatusChange } = require("../services/notifications");
+const {
+  notifyStatusChange,
+  notifyParticipantDeliveryStatusChange,
+} = require("../services/notifications");
 
 const router = express.Router();
 
@@ -519,7 +522,7 @@ router.patch("/purchases/:id/participants/:userId", async (req, res) => {
   try {
     const existing = await pool.query(
       `
-        SELECT delivery_method, delivery_address
+        SELECT participant_status, delivery_method, delivery_address
         FROM purchase_participants
         WHERE purchase_id = $1 AND user_id = $2
       `,
@@ -567,6 +570,21 @@ router.patch("/purchases/:id/participants/:userId", async (req, res) => {
       `,
       values
     );
+
+    const previousParticipantStatus = normalizeParticipantStatus(existing.rows[0].participant_status ?? "assembly");
+    if (participantStatus !== undefined && participantStatus !== previousParticipantStatus) {
+      try {
+        await notifyParticipantDeliveryStatusChange(
+          pool,
+          id,
+          userId,
+          previousParticipantStatus,
+          participantStatus
+        );
+      } catch (notifyErr) {
+        console.error("Admin notify participant delivery status:", notifyErr);
+      }
+    }
 
     const progress = await pool.query(
       `

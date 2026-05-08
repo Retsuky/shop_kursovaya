@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import api from "../../../lib/api";
 import { cartTotalQuantity, subscribeToCartChanges } from "../../../lib/cart";
 import {
   clearAuthSession,
@@ -35,6 +36,7 @@ export default function MarketingHeader() {
   const pathname = usePathname();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [cartCount, setCartCount] = useState(0);
+  const [notifUnread, setNotifUnread] = useState(0);
 
   useEffect(() => {
     const sync = () => setSession(getAuthSession());
@@ -47,6 +49,37 @@ export default function MarketingHeader() {
     syncCart();
     return subscribeToCartChanges(syncCart);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadUnread() {
+      if (!session) {
+        if (!cancelled) {
+          setNotifUnread(0);
+        }
+        return;
+      }
+      try {
+        const res = await api.get<{ count: number }>("/notifications/unread-count");
+        if (!cancelled) {
+          setNotifUnread(res.data.count ?? 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setNotifUnread(0);
+        }
+      }
+    }
+    void loadUnread();
+    const onRead = () => {
+      void loadUnread();
+    };
+    window.addEventListener("notifications-read", onRead);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("notifications-read", onRead);
+    };
+  }, [session, pathname]);
 
   const handleLogout = () => {
     clearAuthSession();
@@ -89,6 +122,9 @@ export default function MarketingHeader() {
           </Link>
           <Link href="/account/notifications" className={styles.iconBtn} aria-label="Уведомления">
             <span className={`material-symbols-outlined ${styles.icon}`}>notifications</span>
+            {notifUnread > 0 ? (
+              <span className={styles.notifBadge}>{notifUnread > 99 ? "99+" : notifUnread}</span>
+            ) : null}
           </Link>
 
           {session ? (

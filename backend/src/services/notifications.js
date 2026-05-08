@@ -10,8 +10,20 @@ const STATUS_RU = {
   cancelled: "Отменена",
 };
 
+const DELIVERY_STATUS_RU = {
+  assembly: "Сборка",
+  delivery: "Доставка",
+  handed: "Вручен",
+  collecting: "Сборка",
+  completed: "Вручен",
+};
+
 function statusLabel(status) {
   return STATUS_RU[status] ?? status;
+}
+
+function deliveryStatusLabel(status) {
+  return DELIVERY_STATUS_RU[status] ?? status;
 }
 
 /**
@@ -92,9 +104,41 @@ async function notifyStatusChange(pool, purchaseId, previousStatus, newStatus, e
   });
 }
 
+async function notifyParticipantDeliveryStatusChange(
+  pool,
+  purchaseId,
+  participantUserId,
+  previousStatus,
+  newStatus
+) {
+  const pRes = await pool.query(`SELECT title FROM purchases WHERE id = $1`, [purchaseId]);
+  const titleDeal = pRes.rows[0]?.title ?? "Сделка";
+  await createNotification(pool, {
+    userId: participantUserId,
+    purchaseId,
+    type: "delivery_status_change",
+    title: `Статус доставки: «${titleDeal}»`,
+    body: `Было: «${deliveryStatusLabel(previousStatus)}». Стало: «${deliveryStatusLabel(newStatus)}».`,
+  });
+}
+
+async function notifyGroupDiscountReached(pool, purchaseId, excludeUserIds = []) {
+  const pRes = await pool.query(`SELECT title FROM purchases WHERE id = $1`, [purchaseId]);
+  const titleDeal = pRes.rows[0]?.title ?? "Сделка";
+  await notifyPurchaseAudience(pool, purchaseId, {
+    type: "group_discount_ready",
+    title: `Групповая скидка активирована: «${titleDeal}»`,
+    body: "Набралось нужное количество участников для групповой скидки.",
+    excludeUserIds,
+  });
+}
+
 module.exports = {
   createNotification,
   notifyPurchaseAudience,
   notifyStatusChange,
+  notifyParticipantDeliveryStatusChange,
+  notifyGroupDiscountReached,
   statusLabel,
+  deliveryStatusLabel,
 };
