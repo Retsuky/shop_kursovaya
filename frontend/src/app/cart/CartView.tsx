@@ -12,7 +12,6 @@ import {
   getCart,
   removeCartLine,
   subscribeToCartChanges,
-  updateCartLineQuantity,
   type CartLine,
 } from "../../lib/cart";
 import { formatRub } from "../../lib/catalogDisplay";
@@ -51,7 +50,7 @@ export default function CartView() {
         <header className={styles.head}>
           <h1 className={styles.title}>Корзина</h1>
           <p className={styles.subtitle}>
-            Выбранные групповые сделки и количество мест. Перейдите к оформлению — на следующем шаге можно будет
+            Выбранные групповые сделки (по 1 товару на сделку). Перейдите к оформлению — на следующем шаге можно будет
             подтвердить заказ.
           </p>
         </header>
@@ -91,30 +90,7 @@ export default function CartView() {
                         <Link href={`/purchases/${line.purchaseId}`}>{line.title}</Link>
                       </h2>
                       <p className={styles.lineMeta}>{line.productName}</p>
-                      <p className={styles.price}>{formatRub(line.unitPrice)} за шт.</p>
-                      <div className={styles.qtyRow}>
-                        <button
-                          type="button"
-                          className={styles.qtyBtn}
-                          aria-label="Меньше"
-                          onClick={() =>
-                            updateCartLineQuantity(line.purchaseId, line.quantity - 1)
-                          }
-                        >
-                          −
-                        </button>
-                        <span className={styles.qtyValue}>{line.quantity}</span>
-                        <button
-                          type="button"
-                          className={styles.qtyBtn}
-                          aria-label="Больше"
-                          onClick={() =>
-                            updateCartLineQuantity(line.purchaseId, line.quantity + 1)
-                          }
-                        >
-                          +
-                        </button>
-                      </div>
+                      <p className={styles.price}>{formatRub(line.unitPrice)} за 1 шт.</p>
                     </div>
                     <div className={styles.lineActions}>
                       <span className={styles.lineSum}>{formatRub(lineSum)}</span>

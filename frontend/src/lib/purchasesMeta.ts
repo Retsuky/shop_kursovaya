@@ -1,25 +1,19 @@
 /** Статус закупки с бэкенда */
 export type PurchaseStatus =
   | "collecting"
-  | "payment"
-  | "supplier_order"
-  | "delivery"
+  | "closed"
   | "completed"
   | "cancelled";
 
 export const STATUS_ORDER: Exclude<PurchaseStatus, "cancelled">[] = [
   "collecting",
-  "payment",
-  "supplier_order",
-  "delivery",
+  "closed",
   "completed",
 ];
 
 export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   collecting: "Сбор заявок",
-  payment: "Оплата",
-  supplier_order: "Заказ у поставщика",
-  delivery: "Доставка и выдача",
+  closed: "Набор закрыт",
   completed: "Завершена",
   cancelled: "Отменена",
 };
@@ -60,6 +54,7 @@ export type Purchase = {
   participant_count?: number;
   total_quantity?: number;
   my_quantity?: number;
+  my_participant_status?: "assembly" | "delivery" | "handed" | string;
   category?: string;
   image_url?: string;
   retail_price?: string | null;

@@ -4,17 +4,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import axios from "axios";
 import MarketingFooter from "../components/landing/MarketingFooter";
 import MarketingHeader from "../components/landing/MarketingHeader";
 import tokens from "../components/landing/landing-tokens.module.css";
 import homeLanding from "../home/home-landing.module.css";
 import {
+  clearCart,
   getCart,
   isCartLineGroupMinimumMet,
   subscribeToCartChanges,
-  updateCartLineQuantity,
   type CartLine,
 } from "../../lib/cart";
+import api from "../../lib/api";
 import { formatRub } from "../../lib/catalogDisplay";
 import styles from "./checkout.module.css";
 
@@ -89,6 +91,8 @@ export default function CheckoutView() {
   const [courierComment, setCourierComment] = useState("");
   const [courierAddressError, setCourierAddressError] = useState("");
   const [courierDraftReady, setCourierDraftReady] = useState(false);
+  const [submitPending, setSubmitPending] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const sync = useCallback(() => {
     setLines(getCart());
@@ -129,7 +133,7 @@ export default function CheckoutView() {
   const total = subtotal + deliveryAmount;
   const allCartLinesGroupPrice = lines.length > 0 && lines.every(isCartLineGroupMinimumMet);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (lines.length === 0) {
       return;
     }
@@ -137,8 +141,33 @@ export default function CheckoutView() {
       setCourierAddressError("Укажите адрес доставки курьером.");
       return;
     }
+    setSubmitError("");
     setCourierAddressError("");
-    router.push("/order-confirmed");
+    setSubmitPending(true);
+    try {
+      await Promise.all(
+        lines.map((line) =>
+          api.post(`/purchases/${line.purchaseId}/join`, {
+            quantity: 1,
+            participant_status: "assembly",
+            delivery_method: delivery,
+            payment_method: payment,
+            delivery_address: delivery === "courier" ? courierAddress.trim() : "",
+            delivery_comment: courierComment.trim(),
+          })
+        )
+      );
+      clearCart();
+      router.push("/order-confirmed");
+    } catch (e) {
+      if (axios.isAxiosError(e)) {
+        setSubmitError(e.response?.data?.message ?? "Не удалось оформить заказ. Проверьте активность сделок.");
+      } else {
+        setSubmitError("Сетевая ошибка при оформлении заказа.");
+      }
+    } finally {
+      setSubmitPending(false);
+    }
   };
 
   if (!cartReady || lines.length === 0) {
@@ -210,33 +239,7 @@ export default function CheckoutView() {
                         </div>
                       </div>
                       <div className={styles.qtyRow}>
-                        <div className={styles.qtyCtl}>
-                          <button
-                            type="button"
-                            className={styles.qtyBtn}
-                            aria-label="Меньше"
-                            onClick={() =>
-                              updateCartLineQuantity(line.purchaseId, line.quantity - 1)
-                            }
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                              remove
-                            </span>
-                          </button>
-                          <span className={styles.qtyVal}>{line.quantity}</span>
-                          <button
-                            type="button"
-                            className={`${styles.qtyBtn} ${styles.qtyBtnAdd}`}
-                            aria-label="Больше"
-                            onClick={() =>
-                              updateCartLineQuantity(line.purchaseId, line.quantity + 1)
-                            }
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                              add
-                            </span>
-                          </button>
-                        </div>
+                        <span className={styles.qtyVal}>1 шт.</span>
                         {isCartLineGroupMinimumMet(line) ? (
                         <span className={styles.badgeGroup}>
                           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
@@ -487,8 +490,9 @@ export default function CheckoutView() {
                 Вы оформляете участие по групповой цене
               </div>
               ) : null}
-              <button type="button" className={styles.submitBtn} onClick={handlePlaceOrder}>
-                Оформить заказ
+              {submitError ? <p className={styles.courierFieldError}>{submitError}</p> : null}
+              <button type="button" className={styles.submitBtn} onClick={() => void handlePlaceOrder()} disabled={submitPending}>
+                {submitPending ? "Оформляем..." : "Оформить заказ"}
               </button>
               <p className={styles.legal}>
                 Нажимая кнопку, вы подтверждаете оформление заказа и переходите к экрану с подтверждением.

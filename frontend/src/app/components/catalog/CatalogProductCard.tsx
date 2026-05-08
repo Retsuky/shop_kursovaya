@@ -164,7 +164,7 @@ export default function CatalogProductCard({ purchase, alreadyJoined = false }: 
           >
             {ctaLabel}
           </Link>
-          <AddToCartButton purchase={purchase} />
+          <AddToCartButton purchase={purchase} alreadyJoined={alreadyJoined} />
         </div>
       </div>
     </article>

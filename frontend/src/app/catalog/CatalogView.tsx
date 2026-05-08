@@ -26,7 +26,7 @@ const CATEGORY_OPTIONS = [
 
 const PRICE_SLIDER_MAX = 100000;
 
-type DealFilter = "open" | "active" | "almost" | "closed" | "all";
+type DealFilter = "open" | "closed_group" | "closed" | "all";
 
 export default function CatalogView() {
   const router = useRouter();
@@ -161,10 +161,9 @@ export default function CatalogView() {
                 <div className={styles.radioList}>
                   {(
                     [
-                      ["open", "Открытые"],
-                      ["active", "Активно"],
-                      ["almost", "Почти собран"],
-                      ["closed", "Выкуплено"],
+                      ["open", "Сбор заявок"],
+                      ["closed_group", "Набор закрыт"],
+                      ["closed", "Завершена"],
                       ["all", "Все"],
                     ] as const
                   ).map(([value, label]) => (
@@ -235,8 +234,8 @@ export default function CatalogView() {
 
             {!loading && !error && items.length === 0 ? (
               <p className={styles.empty}>
-                Попробуйте смягчить фильтры. Новые товары от администратора с этапами «Оплата» / «Завершена» не попадают
-                в раздел «Открытые» — выберите в боковой панели «Все» или «Выкуплено», затем «Применить фильтры».{" "}
+                Попробуйте смягчить фильтры. Сделки в статусах «Набор закрыт» и «Завершена» не попадают
+                в раздел «Открытые» — выберите в боковой панели «Все», «Набор закрыт» или «Завершенные», затем «Применить фильтры».{" "}
                 <Link href="/catalog?deal=all">Показать все сделки</Link>.
               </p>
             ) : null}
