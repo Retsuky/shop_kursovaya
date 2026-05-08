@@ -10,14 +10,13 @@ import tokens from "../components/landing/landing-tokens.module.css";
 import homeLanding from "../home/home-landing.module.css";
 import {
   getCart,
+  isCartLineGroupMinimumMet,
   subscribeToCartChanges,
   updateCartLineQuantity,
   type CartLine,
 } from "../../lib/cart";
 import { formatRub } from "../../lib/catalogDisplay";
 import styles from "./checkout.module.css";
-
-const AVATAR_SEEDS = ["checkout-a", "checkout-b", "checkout-c", "checkout-d"];
 
 const COURIER_DRAFT_KEY = "shop_checkout_courier_v1";
 
@@ -128,7 +127,7 @@ export default function CheckoutView() {
       : "По тарифу курьера";
   const deliveryAmount = delivery === "pickup" ? 0 : 0;
   const total = subtotal + deliveryAmount;
-  const socialCount = Math.max(3, lines.length * 4 + 8);
+  const allCartLinesGroupPrice = lines.length > 0 && lines.every(isCartLineGroupMinimumMet);
 
   const handlePlaceOrder = () => {
     if (lines.length === 0) {
@@ -238,12 +237,14 @@ export default function CheckoutView() {
                             </span>
                           </button>
                         </div>
+                        {isCartLineGroupMinimumMet(line) ? (
                         <span className={styles.badgeGroup}>
                           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                             groups
                           </span>
                           Групповая цена
                         </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -470,10 +471,12 @@ export default function CheckoutView() {
                   <span>Товары ({lines.reduce((n, l) => n + l.quantity, 0)} шт.)</span>
                   <span>{formatRub(subtotal)}</span>
                 </div>
+                {allCartLinesGroupPrice ? (
                 <div className={styles.summaryRowHighlight}>
                   <span>Групповая цена</span>
                   <span>учтена</span>
                 </div>
+                ) : null}
                 <div className={styles.summaryRow}>
                   <span>Доставка</span>
                   <span>{deliveryNote}</span>
@@ -483,36 +486,19 @@ export default function CheckoutView() {
                 <span className={styles.totalLabel}>К оплате</span>
                 <span className={styles.totalValue}>{formatRub(total)}</span>
               </div>
+              {allCartLinesGroupPrice ? (
               <div className={styles.savingsBanner}>
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
                   savings
                 </span>
                 Вы оформляете участие по групповой цене
               </div>
+              ) : null}
               <button type="button" className={styles.submitBtn} onClick={handlePlaceOrder}>
                 Оформить заказ
               </button>
               <p className={styles.legal}>
                 Нажимая кнопку, вы подтверждаете оформление заказа и переходите к экрану с подтверждением.
-              </p>
-            </div>
-
-            <div className={styles.socialProof}>
-              <div className={styles.avatarStack} aria-hidden>
-                {AVATAR_SEEDS.map((seed) => (
-                  <Image
-                    key={seed}
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`}
-                    alt=""
-                    width={32}
-                    height={32}
-                    unoptimized
-                  />
-                ))}
-                <span className={styles.avatarMore}>+{socialCount}</span>
-              </div>
-              <p className={styles.socialText}>
-                Ещё участники в похожих группах — присоединяйтесь, чтобы быстрее закрыть минимум.
               </p>
             </div>
 

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Оформление заказа | CoBuy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#89f5e7",
+                    "on-tertiary-container": "#4e3e00",
+                    "secondary-fixed-dim": "#ffb2b7",
+                    "error-container": "#ffdad6",
+                    "surface-container": "#e5eeff",
+                    "on-secondary-fixed-variant": "#92002a",
+                    "on-tertiary-fixed": "#231b00",
+                    "surface-tint": "#006a61",
+                    "surface-bright": "#f8f9ff",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "tertiary-container": "#cea700",
+                    "outline": "#6d7a77",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#eec200",
+                    "inverse-primary": "#6bd8cb",
+                    "secondary": "#b90538",
+                    "on-surface-variant": "#3d4947",
+                    "tertiary": "#735c00",
+                    "surface-container-low": "#eff4ff",
+                    "surface-container-high": "#dce9ff",
+                    "primary-container": "#008378",
+                    "on-primary-container": "#f4fffc",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#dc2c4f",
+                    "primary": "#00685f",
+                    "on-secondary-fixed": "#40000d",
+                    "on-secondary": "#ffffff",
+                    "background": "#f8f9ff",
+                    "inverse-surface": "#213145",
+                    "outline-variant": "#bcc9c6",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-primary-fixed": "#00201d",
+                    "error": "#ba1a1a",
+                    "surface-variant": "#d3e4fe",
+                    "primary-fixed-dim": "#6bd8cb",
+                    "on-secondary-container": "#fffbff",
+                    "on-surface": "#0b1c30",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#cbdbf5",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#005049",
+                    "secondary-fixed": "#ffdadb",
+                    "on-background": "#0b1c30",
+                    "tertiary-fixed": "#ffe083"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin": "24px",
+                    "lg": "40px",
+                    "gutter": "16px",
+                    "xs": "8px",
+                    "sm": "16px",
+                    "base": "4px",
+                    "md": "24px",
+                    "xl": "64px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "body-base": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-base": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background font-body-base text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm flex justify-between items-center px-4 h-16 font-['Plus_Jakarta_Sans']">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-teal-50 rounded-full transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-600">arrow_back</span>
+</button>
+<span class="text-2xl font-black tracking-tighter text-teal-600">CoBuy</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-teal-50 rounded-full transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-600" data-icon="help_outline">help_outline</span>
+</button>
+<button class="p-2 hover:bg-teal-50 rounded-full transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-600" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-24 pb-12 px-margin max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-gutter lg:gap-lg">
+<!-- Left Section: Details, Shipping, Payment -->
+<div class="md:col-span-8 space-y-md">
+<h1 class="font-display-lg text-headline-md md:text-display-lg text-on-surface mb-sm">Оформление заказа</h1>
+<!-- Order Items Section -->
+<section class="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,104,95,0.05)] border border-outline-variant/30">
+<h2 class="font-headline-md text-body-base font-bold mb-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">shopping_bag</span>
+                    Детали заказа
+                </h2>
+<div class="flex flex-col sm:flex-row gap-md items-start sm:items-center py-sm">
+<div class="w-full sm:w-32 h-32 rounded-lg overflow-hidden bg-surface-container-low flex-shrink-0">
+<img alt="Product" class="w-full h-full object-cover" data-alt="A professional, high-end product photograph of a sleek crimson running shoe displayed against a neutral, minimalist background. The lighting is soft and ambient, emphasizing the shoe's elegant curves and premium mesh texture. The color palette is clean, featuring deep red accents and bright white midsoles, perfectly aligned with a modern, high-trust marketplace aesthetic. The overall mood is energetic and premium." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCIESM3dfcRcs6WmPln1tXdON1zdmva4ntqJCRvMd4MmNkx9AjEtL7KowEdBLZhLRzaceUi2Svet7W1ZI1RLQRRkfQjC3GnZLdTHXtjW_xds-pyDik8lMUoVW9zsAmXviFObv1Rq8ei9gDon2z8Sf9wwxw53bU8g_45ZQPxcVeDkdh0zU1WIwMd8D_Kus5GLQVozJ7LXAFJgB8NI-QUnx-HURDazW1WC7jie40K6Ue_SDPrQ8aPWBul7DN3ErocOvd8G0I5yXcv4c"/>
+</div>
+<div class="flex-grow space-y-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-headline-md text-body-base font-bold text-on-surface">Беговые кроссовки UltraBoost Pro</h3>
+<p class="text-label-sm text-outline font-label-sm">Размер: 42 • Цвет: Ярко-красный</p>
+</div>
+<div class="text-right">
+<p class="text-secondary font-bold text-body-base">8 450 ₽</p>
+<p class="text-label-sm text-outline line-through font-label-sm">12 900 ₽</p>
+</div>
+</div>
+<div class="flex items-center gap-4 mt-sm">
+<div class="flex items-center border border-outline-variant rounded-full p-1 bg-surface-container-lowest">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="px-4 font-bold text-body-base">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors text-primary">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<div class="bg-primary-fixed/30 text-on-primary-fixed-variant px-3 py-1 rounded-full text-label-sm font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">group</span>
+                                Групповая цена
+                            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Shipping Section -->
+<section class="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,104,95,0.05)] border border-outline-variant/30">
+<h2 class="font-headline-md text-body-base font-bold mb-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">local_shipping</span>
+                    Способ доставки
+                </h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+<!-- Pickup -->
+<label class="relative flex flex-col p-md rounded-xl border-2 border-primary bg-primary-fixed/10 cursor-pointer group transition-all">
+<input checked="" class="hidden" name="delivery" type="radio"/>
+<div class="flex justify-between items-start mb-2">
+<span class="material-symbols-outlined text-primary active-icon">inventory_2</span>
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</div>
+<span class="font-bold text-body-base mb-1">Пункт выдачи</span>
+<span class="text-label-sm text-outline font-label-sm leading-tight">Бесплатно • 2-3 дня<br/>CoBuy Hub, ул. Пушкина 10</span>
+</label>
+<!-- Courier -->
+<label class="relative flex flex-col p-md rounded-xl border-2 border-outline-variant hover:border-primary-fixed cursor-pointer group transition-all">
+<input class="hidden" name="delivery" type="radio"/>
+<div class="flex justify-between items-start mb-2">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">delivery_dining</span>
+</div>
+<span class="font-bold text-body-base mb-1">Курьер</span>
+<span class="text-label-sm text-outline font-label-sm leading-tight">450 ₽ • Завтра<br/>До вашей двери</span>
+</label>
+</div>
+<div class="mt-md rounded-xl overflow-hidden h-48 border border-outline-variant">
+<img alt="Map" class="w-full h-full object-cover grayscale opacity-80" data-alt="A clean, minimalist digital map rendering of an urban city district, specifically Moscow, featuring subtle teal and soft grey tones. The map design uses light mode aesthetics with delicate street lines and soft shadows. A single vibrant teal pin marks a location, creating a sense of clarity and reliability. The visual style is professional, high-trust, and fits seamlessly within a modern fintech or marketplace user interface." data-location="Moscow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsfiSDokYppIMK3o_D3d9iHnFGGQordBHHs1kB9jkcnU0Xv2Dq7POfcoVd_517XGhBbzfeKzVGbWS2m3YMSBqoG22IXopdGS9ZsdGYiKI2SwayasJ3ShYS9QR0SL0MnJiwICyab9VXSO7-JxawI8UPsuiNkeLHwp8AIvHbrigl1tM460RhMDUUiBc6O4ocLemVPQOodVbU1tbNpQ2uzheUiqEvnhU1n9XkDMTgJOTlr2BRDyZnXSd3KxJQUHm2qK-Trsxjv_ZoH2Q"/>
+</div>
+</section>
+<!-- Payment Section -->
+<section class="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,104,95,0.05)] border border-outline-variant/30">
+<h2 class="font-headline-md text-body-base font-bold mb-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">payments</span>
+                    Способ оплаты
+                </h2>
+<div class="space-y-sm">
+<label class="flex items-center gap-md p-sm rounded-xl border border-outline-variant hover:bg-surface-container-low cursor-pointer transition-colors group">
+<input class="w-5 h-5 text-primary border-outline-variant focus:ring-primary" name="payment" type="radio"/>
+<span class="material-symbols-outlined text-slate-500">credit_card</span>
+<div class="flex-grow">
+<p class="font-bold text-body-base leading-none">Карта онлайн</p>
+<p class="text-label-sm text-outline font-label-sm">Visa, Mastercard, МИР</p>
+</div>
+<div class="flex gap-1">
+<div class="w-8 h-5 bg-slate-100 rounded-sm"></div>
+<div class="w-8 h-5 bg-slate-100 rounded-sm"></div>
+</div>
+</label>
+<label class="flex items-center gap-md p-sm rounded-xl border border-outline-variant hover:bg-surface-container-low cursor-pointer transition-colors group">
+<input checked="" class="w-5 h-5 text-primary border-outline-variant focus:ring-primary" name="payment" type="radio"/>
+<span class="material-symbols-outlined text-slate-500">account_balance</span>
+<div class="flex-grow">
+<p class="font-bold text-body-base leading-none">СБП</p>
+<p class="text-label-sm text-outline font-label-sm">Система быстрых платежей</p>
+</div>
+<div class="bg-primary-fixed/30 text-on-primary-fixed text-[10px] font-bold px-2 py-0.5 rounded uppercase">Fast</div>
+</label>
+</div>
+</section>
+</div>
+<!-- Right Section: Summary -->
+<div class="md:col-span-4">
+<aside class="sticky top-24 space-y-sm">
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-lg border border-primary/10 overflow-hidden relative">
+<!-- Subtle background decoration -->
+<div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
+<h2 class="font-headline-md text-body-base font-bold mb-md">Итого</h2>
+<div class="space-y-sm pb-md border-b border-outline-variant/30">
+<div class="flex justify-between text-body-base text-on-surface-variant">
+<span>Товары (1 шт.)</span>
+<span>12 900 ₽</span>
+</div>
+<div class="flex justify-between text-body-base text-primary font-semibold">
+<span>Групповая скидка</span>
+<span>-4 450 ₽</span>
+</div>
+<div class="flex justify-between text-body-base text-on-surface-variant">
+<span>Доставка</span>
+<span>Бесплатно</span>
+</div>
+</div>
+<div class="py-md space-y-base">
+<div class="flex justify-between items-end">
+<span class="text-on-surface font-bold text-body-base">К оплате</span>
+<span class="text-on-surface font-black text-headline-md">8 450 ₽</span>
+</div>
+<div class="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-2 rounded-lg flex items-center gap-2 mt-sm">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">celebration</span>
+<span class="text-label-sm font-label-sm">Ваша экономия составила 4 450 ₽</span>
+</div>
+</div>
+<button class="w-full py-4 bg-secondary text-on-secondary rounded-xl font-bold text-body-base shadow-md shadow-secondary/20 hover:scale-[1.02] active:scale-95 transition-all duration-200 mt-md">
+                        Оформить заказ
+                    </button>
+<p class="text-[10px] text-outline text-center mt-md px-md leading-relaxed font-label-sm uppercase">
+                        Нажимая на кнопку, вы соглашаетесь с условиями оферты и политикой конфиденциальности
+                    </p>
+</div>
+<!-- Social Proof / Urgency -->
+<div class="bg-primary-container/10 border border-primary-container/20 rounded-xl p-sm flex items-center gap-sm">
+<div class="flex -space-x-2">
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-white" data-alt="A close-up portrait of a cheerful, diverse young woman with a friendly smile, photographed in soft, natural daylight. The image has a warm, approachable tone, with high-key lighting that emphasizes a modern, community-focused brand vibe. The background is a soft-focus urban park, creating a sense of reliable social proof and shared community value." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsfPZxC_xjNd38Mqy-smZtKugvbewDMfjDpPlOpM7b-1bP38UrEkfShi63RC7E-LCVzYUDF96e5I8q9T52ITuOMvdwoc5KS354CyODOk9299xUVQPe1nmwFGfCQ1XixQpAsyfHNXUaRalMkdSLdxuHGA7mJEilnmIXr9lopYwbXKYsF6MMdsx8-QL6XXc9lbruvwJXJK7Su-use-BFVwY9kTrU1Qc7AJH28pC5UmkvkyrN2IRQc5ky-9sGf7eUnSsFPVSw7861xSQ"/>
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-white" data-alt="A professional headshot of a smiling man with a neat beard, looking directly at the camera with an expression of confidence and trust. The lighting is bright and clean, characteristic of a high-end light-mode user interface. The color palette is neutral with soft blue undertones, projecting transparency and collective empowerment within a digital marketplace context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiI8thoD-X1TRu5M3yDaFJ5Y68CwyGp0sanES-lFv8oIoCv4dWMj7fpfrfhPg0TfwLqDKhZ2DxM98_OBtrL0GA8dFrARTZTKA-afTt53BX53KV2QxEGZ9ylHSjkifrnQvl-v0m207zzJ2SwX73ZK6aeMWG8bwtVGHcm1XjDguFXS88hm2jykoJhyUc1eo-S3kHRxcP6be7i2IzVvAPyoYt49kwYEt5pUZPUPOAFxlug--lsG7I8A63eLHoqwOojn6iqiFeXnieCi4"/>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-primary text-white flex items-center justify-center text-[10px] font-bold">+14</div>
+</div>
+<p class="text-label-sm font-label-sm text-primary-container leading-tight">
+                        Ещё 14 человек уже в этой группе!
+                    </p>
+</div>
+</aside>
+</div>
+</main>
+<!-- Suppressing BottomNavBar as per transactional page rules -->
+</body></html>

@@ -64,6 +64,8 @@ export type Purchase = {
   image_url?: string;
   retail_price?: string | null;
   participant_preview?: ParticipantPreview[];
+  rating_avg?: number;
+  rating_count?: number;
 };
 
 export type CatalogResponse = {

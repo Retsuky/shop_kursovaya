@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#213145",
+                    "background": "#f8f9ff",
+                    "outline-variant": "#bcc9c6",
+                    "inverse-on-surface": "#eaf1ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#40000d",
+                    "primary": "#00685f",
+                    "on-secondary": "#ffffff",
+                    "secondary-container": "#dc2c4f",
+                    "on-primary-fixed-variant": "#005049",
+                    "secondary-fixed": "#ffdadb",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#ffe083",
+                    "on-background": "#0b1c30",
+                    "primary-fixed-dim": "#6bd8cb",
+                    "on-primary-fixed": "#00201d",
+                    "error": "#ba1a1a",
+                    "surface-variant": "#d3e4fe",
+                    "on-error": "#ffffff",
+                    "on-surface": "#0b1c30",
+                    "surface-dim": "#cbdbf5",
+                    "on-secondary-container": "#fffbff",
+                    "surface-container": "#e5eeff",
+                    "on-secondary-fixed-variant": "#92002a",
+                    "error-container": "#ffdad6",
+                    "secondary-fixed-dim": "#ffb2b7",
+                    "surface-tint": "#006a61",
+                    "surface": "#f8f9ff",
+                    "surface-bright": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "on-tertiary-fixed": "#231b00",
+                    "on-tertiary-container": "#4e3e00",
+                    "primary-fixed": "#89f5e7",
+                    "on-surface-variant": "#3d4947",
+                    "tertiary": "#735c00",
+                    "secondary": "#b90538",
+                    "on-primary-container": "#f4fffc",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#dce9ff",
+                    "surface-container-low": "#eff4ff",
+                    "primary-container": "#008378",
+                    "tertiary-container": "#cea700",
+                    "outline": "#6d7a77",
+                    "inverse-primary": "#6bd8cb",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#eec200"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "16px",
+                    "base": "4px",
+                    "md": "24px",
+                    "xl": "64px",
+                    "lg": "40px",
+                    "margin": "24px",
+                    "gutter": "16px",
+                    "xs": "8px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "body-base": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-base": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .progress-pulse {
+            animation: pulse-light 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-light {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-base">
+<!-- TopNavBar -->
+<header class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md full-width sticky top-0 z-50 border-b border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(13,148,136,0.1)]">
+<div class="flex justify-between items-center w-full px-4 md:px-12 max-w-7xl mx-auto h-20">
+<div class="text-2xl font-extrabold text-teal-600 dark:text-teal-400 tracking-tighter">CoBuy</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-tight text-slate-600 dark:text-slate-400 hover:text-teal-500 transition-colors" href="#">Активные сделки</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-tight text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 pb-1 font-bold" href="#">Каталог</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-tight text-slate-600 dark:text-slate-400 hover:text-teal-500 transition-colors" href="#">В тренде</a>
+<a class="font-['Plus_Jakarta_Sans'] text-sm font-medium tracking-tight text-slate-600 dark:text-slate-400 hover:text-teal-500 transition-colors" href="#">Как это работает</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</button>
+<button class="p-2 text-slate-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed ml-2">
+<img alt="User profile" data-alt="Close-up portrait of a professional man with a friendly smile, clean lighting, soft bokeh background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw9Ph_QVMlQimO6hxG977GPolc5OT_dsfL7E14XM3hqfZM2z11OmvX54_vmedvBhuN38wSiBafd4bT3loor4tTdQqyOo1zLEw0--kYsTYiOP1UmRsbyc-wzFhwMPkBPAiKgeA0awxQFg4pDhcXtb7mxfdnZmfzfBLZQXa33GsoFMyzo1lRY2-yjjiuCXsfGPyA5TN3lq6ACbhZ8xsUOVdLGBy-mnSU83jGJClb0vTKCVgchFtLhh1hIvrGe2FxJtut_q0Fes5RocY"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 md:px-12 py-10 flex flex-col md:flex-row gap-10">
+<!-- Sidebar Filters -->
+<aside class="w-full md:w-64 flex-shrink-0">
+<div class="sticky top-28 space-y-8">
+<div>
+<h3 class="font-headline-md text-headline-md mb-4 text-on-surface">Категории</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 group cursor-pointer">
+<input class="rounded border-outline text-primary focus:ring-primary w-5 h-5" type="checkbox"/>
+<span class="text-body-base text-on-surface-variant group-hover:text-primary transition-colors">Электроника</span>
+</label>
+<label class="flex items-center gap-3 group cursor-pointer">
+<input class="rounded border-outline text-primary focus:ring-primary w-5 h-5" type="checkbox"/>
+<span class="text-body-base text-on-surface-variant group-hover:text-primary transition-colors">Дом и уют</span>
+</label>
+<label class="flex items-center gap-3 group cursor-pointer">
+<input class="rounded border-outline text-primary focus:ring-primary w-5 h-5" type="checkbox"/>
+<span class="text-body-base text-on-surface-variant group-hover:text-primary transition-colors">Мода</span>
+</label>
+<label class="flex items-center gap-3 group cursor-pointer">
+<input class="rounded border-outline text-primary focus:ring-primary w-5 h-5" type="checkbox"/>
+<span class="text-body-base text-on-surface-variant group-hover:text-primary transition-colors">Фитнес</span>
+</label>
+</div>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md mb-4 text-on-surface">Статус сделки</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 group cursor-pointer">
+<input class="rounded-full border-outline text-primary focus:ring-primary w-5 h-5" name="status" type="radio"/>
+<span class="text-body-base text-on-surface-variant group-hover:text-primary transition-colors">Активно</span>
+</label>
+<label class="flex items-center gap-3 group cursor-pointer">
+<input class="rounded-full border-outline text-primary focus:ring-primary w-5 h-5" name="status" type="radio"/>
+<span class="text-body-base text-on-surface-variant group-hover:text-primary transition-colors">Почти собран</span>
+</label>
+<label class="flex items-center gap-3 group cursor-pointer">
+<input class="rounded-full border-outline text-primary focus:ring-primary w-5 h-5" name="status" type="radio"/>
+<span class="text-body-base text-on-surface-variant group-hover:text-primary transition-colors">Выкуплено</span>
+</label>
+</div>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md mb-4 text-on-surface">Цена</h3>
+<div class="space-y-4">
+<input class="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary" max="1000" min="0" type="range"/>
+<div class="flex justify-between text-label-sm text-outline">
+<span>$0</span>
+<span>$1000+</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary-container text-on-primary-container rounded-xl font-bold active:scale-95 transition-all">
+                Применить фильтры
+            </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<section class="flex-grow">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-background">Каталог товаров</h1>
+<p class="text-body-base text-on-surface-variant">Показано 124 товара во всех категориях</p>
+</div>
+<div class="flex items-center gap-2 text-label-sm text-outline border border-outline-variant px-4 py-2 rounded-lg bg-surface">
+<span>Сортировка:</span>
+<select class="bg-transparent border-none focus:ring-0 font-bold text-on-surface cursor-pointer">
+<option>Популярные</option>
+<option>Новинки</option>
+<option>Скоро закрываются</option>
+</select>
+</div>
+</div>
+<!-- Product Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(13,148,136,0.1)] hover:shadow-[0_10px_30px_-5px_rgba(13,148,136,0.15)] transition-all flex flex-col group">
+<div class="relative h-48 overflow-hidden">
+<img alt="Наушники Audio-X Pro" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="High-end noise-canceling headphones resting on a minimalist wooden desk with soft studio lighting and clean aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7fs-DXZuipTe_M8Lhq4YNFG4-xUJjbAjd35vmfRIycqyVJq0SK31tWnZmh_qetxqxZKNVa0eiVPc1z1s70lx1iCElbjxWG7I3rLeGZQRSmsg2vLn0_3zcKxx2q90SARTXdgTZHBqpCZCtZrFTFQziz5-ykAfnK7bGscUmyf8HwWILk_QtW4xkyn-rskslKYrPOZxks_8I45tU9L7bxUwBj75laonVZgi4-6GYfiSyk3GFGzJdocqE8Foh2OTfXg8RxUqhcE0Dcj8"/>
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="px-3 py-1 bg-surface-container-lowest/90 backdrop-blur text-primary text-label-sm rounded-full shadow-sm">Активно</span>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-label-sm rounded-full shadow-sm font-bold">Скидка 40%</span>
+</div>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<h4 class="font-headline-md text-headline-md mb-1 text-on-surface truncate">Наушники Audio-X Pro</h4>
+<p class="text-label-sm text-outline mb-4">Электроника и Техника</p>
+<div class="mt-auto space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<span class="text-label-sm text-outline block">Цена CoBuy</span>
+<span class="text-headline-md text-primary">$189.00</span>
+<span class="text-label-sm text-outline line-through ml-1">$299.00</span>
+</div>
+<div class="text-right">
+<span class="text-label-sm text-secondary flex items-center justify-end gap-1 font-bold">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    осталось 2д 14ч
+                                </span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-label-sm font-bold">
+<span class="text-primary">82% собрано</span>
+<span class="text-on-surface-variant">41/50 участников</span>
+</div>
+<div class="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 82%"></div>
+</div>
+</div>
+<div class="flex items-center -space-x-2">
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Close up face of a smiling person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDljLb4o6g00Dg6BIBJa7uvQoQuiY5iz7tnEGsyqEpY7E54xyoDFx104aho4bs6-85fNbZsQWvqWTlbwug4vcwvOyUwMMhaHY-IJjrpoCPtLYIL2YlaWDd-ejUdIedNX4fOMc_Ae5v5Yiv3Ra_hSUOo-aIhILzzYGDwTMTkYRwWPw7or4_ThpyF1eHWXUvs15-STFwqThwM37bFSy8KD6Bh2UTROdxlv5dwfJrAewbfW6IMYoO8AiyezyWMcFPSbiRcE6fOpmegc5U"/>
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Close up face of a smiling person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbb9klYOpOVvQHtuKeT_veIQ_KQ-NBLowGsqdpw1wbHNWNlKZQDebgmh-X9gAgZPSYeAPARfdBRJQ4D_6tf_tarpiV3rPRFV7-I06ixCPBAOaB2sJALhNo8LltvxVeUJFO73MpLcdvXv1kLDiN37xZFPb_8mOUdtZ8V5oB1YNDakILxKXQG2ZlEJAjWQtxrLahe5eo44l_8Agx8aaGeWUKEO3yLDFkLG_Q3CQsIQOfTPxnjELiV9X8a4klHxlVElgdjI6gy4uteCI"/>
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Close up face of a smiling person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD43PFUeMtZJRYr4y-1qQ0OV3Jumcb4dYWSseUlTgZWPonoXb8UZfgOM16ffg8LwHU2kY-gjVlUw5FP9ZfesJFkC3-aMU00nzDjPLSs9sWjjq8qZUO4pOaT-zuLLkooqF-66MSG1Hq7JVLzWgb3kG4ko1gDicZhtAEmJ3ewCXJlNBdJJx6oIPUYSCRrBPEIuClCvT9MfEk13cY9MffShDuMOQvFsUZYrMc01BSBfB3yc7_mfoLDZ1usALpaw83Nkm1ozS7Juh9LQKk"/>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border-2 border-surface-container-lowest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+38</div>
+</div>
+<button class="w-full py-3 bg-secondary-container text-on-secondary-container rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">
+                            Вступить в группу
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 2 (Almost Full) -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(13,148,136,0.1)] hover:shadow-[0_10px_30px_-5px_rgba(13,148,136,0.15)] transition-all flex flex-col group border-2 border-primary/20">
+<div class="relative h-48 overflow-hidden">
+<img alt="Кроссовки Velocity Elite" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Modern red performance running shoes against a clean grey background with cinematic side lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlYCvV-W5cPE5FBH18ooycdTv3SQnjG05qfyrmjmq1Aw2VPi7L5W96BRhnSmb4LSi_w6b5TziUHXUwEOvdDMiE5Ady5sTpYupio3bvVoLJ5IzQkHc8zU23XAvd8RwiUZz1K8LPZbGCBIrsUEIyfjP0VIfccWSzqBGDACZKNUcXpoNhWEtH2lIWIk0t7QnKzBUkphxMpd5aKxae1aJi3IIShqBHO5PXvAUBOxiH5QLvE6Q-jQHf9UgQ8tv6T5QVIF378rpr877NZzs"/>
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container text-label-sm rounded-full shadow-sm font-bold">Почти собран</span>
+</div>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<h4 class="font-headline-md text-headline-md mb-1 text-on-surface truncate">Кроссовки Velocity Elite</h4>
+<p class="text-label-sm text-outline mb-4">Одежда и Обувь</p>
+<div class="mt-auto space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<span class="text-label-sm text-outline block">Цена CoBuy</span>
+<span class="text-headline-md text-primary">$120.00</span>
+<span class="text-label-sm text-outline line-through ml-1">$180.00</span>
+</div>
+<div class="text-right">
+<span class="text-label-sm text-secondary flex items-center justify-end gap-1 font-bold">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    осталось 4ч 22м
+                                </span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-label-sm font-bold">
+<span class="text-tertiary">96% собрано</span>
+<span class="text-on-surface-variant">24/25 участников</span>
+</div>
+<div class="w-full h-2 bg-tertiary/10 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full progress-pulse" style="width: 96%"></div>
+</div>
+</div>
+<div class="flex items-center -space-x-2">
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Close up face of a smiling person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLO9lWL0pJ0jEha-wWYVHja_HKsC6Nb3r-MenjG3_Yb7i3qXGZ2sSLl620iE7lsOpfNYzlNi8BEb0a3hVWTzmrHnB2-DmOxM2-2K-FySQxWw6V0pwkGjyPZEdm-jVXb3npYDWnzlgv1dx2bxcxoplyrtQpnfAbYoXXphnlqq4nNyxCUdJ4zLY5abnFgd1dMSpZ5BRZzRWBQETzKPXWDJScOCPAHEepODWPwvBf5eeHUmngSOS7_gnMIVjLUJL_ICUVxrsPew1LYJY"/>
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Close up face of a smiling person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD48Fq9CF9D6lraANae-3pH1XQM4hCUc7gsYkv5EaO-8xjtNfYrdY50UcsncadRQKkl-IEFOI3kdD0LuRzAQ7Tz8rb6ICatVNkeCCaRcdCKNrmoK4srNQ88evdMFl6u8snXvVqp4YJvseH0EK7L-3oAXzdiKLYVwtybWvipzrhugR8-jEM1KP0_usoNrcu5W5Bo8RYNmTtrVmTFhUa7VVPCeYwzwpCkFzyYHHcrZvjyM4DxGefNCIOdgxTxHJJMJPYpj8fSslx8KbI"/>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border-2 border-surface-container-lowest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+22</div>
+</div>
+<button class="w-full py-3 bg-secondary-container text-on-secondary-container rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">
+                            Последнее место! Вступить
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(13,148,136,0.1)] hover:shadow-[0_10px_30px_-5px_rgba(13,148,136,0.15)] transition-all flex flex-col group">
+<div class="relative h-48 overflow-hidden">
+<img alt="Очиститель воздуха PureBreeze" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Sleek white modern air purifier in a bright airy living room setting with soft natural sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3y4hRjnDdGaPKEm1B_XNFRXIzukyu4IgZJvT6eoBu2dKW6P_muXZcpWPJtc-ZKHFnBTwLXPtj8KXsgkhpNZIRg8J0N4CJGKGS1HroNCM9O8ZpnSoc-riUPrWdvUrL0wSMM1mfrZoiE6EjNi_rNEOtq9HZ6NpOwObcL8wvnmA9DIneJ_z6nozLS7ejE-84LLtVEHVuaphjLOTfr0nKtgECU0zp3HvK8grLZTIgbyaluZjBMg7GgCrVUU2jpHCKR7YyykGRAheLOhE"/>
+<div class="absolute top-3 left-3 flex gap-2">
+<span class="px-3 py-1 bg-surface-container-lowest/90 backdrop-blur text-primary text-label-sm rounded-full shadow-sm">Активно</span>
+</div>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<h4 class="font-headline-md text-headline-md mb-1 text-on-surface truncate">Очиститель воздуха PureBreeze</h4>
+<p class="text-label-sm text-outline mb-4">Дом и уют</p>
+<div class="mt-auto space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<span class="text-label-sm text-outline block">Цена CoBuy</span>
+<span class="text-headline-md text-primary">$345.00</span>
+<span class="text-label-sm text-outline line-through ml-1">$450.00</span>
+</div>
+<div class="text-right">
+<span class="text-label-sm text-secondary flex items-center justify-end gap-1 font-bold">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    осталось 5д 12ч
+                                </span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-label-sm font-bold">
+<span class="text-primary">45% собрано</span>
+<span class="text-on-surface-variant">45/100 участников</span>
+</div>
+<div class="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 45%"></div>
+</div>
+</div>
+<div class="flex items-center -space-x-2">
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Close up face of a smiling person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgJwv4iFOpqoLMvFo6Fxcq4aJNPDHu_2HIKW_WfS2dqBwpC4F_q7qyVzvOjNXtEzcCTciREnpcWcM56O7ONebjAzecN7uxkMCAwL-fd92a8tnAv8TmgPdsnnQHwse0iouBDHG95mNuc5GgUXkG1zhPPs8yBJWVFB8nyqTjegLNNma4j2qOasuGTp-3UljSCfSV9xHyGJOKHRqtauzYB0CBx9Fci4PpSi7RGTT4X_OoHLMnnszBFAqsydcPZVBSlfnCOnIhZGIlsKQ"/>
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Close up face of a smiling person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxCkU0F6T9_6lJMCW0NZup9T5SEI7U8nxymVvnmqpFA4OyUs-hnOXnlMX0Ar89XgSXU4XiY5xDWsmAyawERYNG3afPeMH6ozPfgYXE2E3J5NJDGSPxcERsHZFCImfRw8HwJ0_-cjj70yuG5K06A30wTPavFhQIbMD-EZ0gA1xxQaK4pOk6PqS8nucJrhwYFszCgUe7JcU8Noi_HTItZftp2_egPLqmXG0pomn2QuLJDdO4EC2MJj5hDUvPFIaXobxK0kSAWvVcnYk"/>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border-2 border-surface-container-lowest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+43</div>
+</div>
+<button class="w-full py-3 bg-secondary-container text-on-secondary-container rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">
+                            Вступить в группу
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(13,148,136,0.1)] hover:shadow-[0_10px_30px_-5px_rgba(13,148,136,0.15)] transition-all flex flex-col group">
+<div class="relative h-48 overflow-hidden">
+<img alt="Кроссовки Shadow Run" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Sleek black sneakers on a white platform with dramatic dark shadows and high contrast" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqSe7vQ6517Mdp6jcDAlvPNHu4YfnJCZ5M39c6o5G6RAcYdIEPQWgLH21g8fEBmnCgZ14Fdg94nCCGk8q8bhVphyX1ApZPO4F2dMXVxwhE8QU8Gzho8mbCfYLJons3PkEtSy73F9ZcldV27MIdgjxzV28ZCWfeA6NRzB1f5ZRQbPPqFjr7NhT-3s7JYl79NZdaPrQgKZKZR_d3OGR27mBJ-6fot_UxuiMRaSRGnurxWmiVtapBianjTZpkLz-X3aKAY0MAVLBpgG8"/>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<h4 class="font-headline-md text-headline-md mb-1 text-on-surface truncate">Кроссовки Shadow Run</h4>
+<p class="text-label-sm text-outline mb-4">Мода</p>
+<div class="mt-auto space-y-4">
+<div class="flex justify-between items-end">
+<div><span class="text-headline-md text-primary">$85.00</span></div>
+<div class="text-right"><span class="text-label-sm text-secondary flex items-center justify-end gap-1 font-bold">1д осталось</span></div>
+</div>
+<div class="space-y-1">
+<div class="w-full h-2 bg-primary/10 rounded-full overflow-hidden"><div class="h-full bg-primary" style="width: 60%"></div></div>
+</div>
+<button class="w-full py-3 bg-secondary-container text-on-secondary-container rounded-xl font-bold active:scale-95 transition-all">Вступить в группу</button>
+</div>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(13,148,136,0.1)] hover:shadow-[0_10px_30px_-5px_rgba(13,148,136,0.15)] transition-all flex flex-col group">
+<div class="relative h-48 overflow-hidden">
+<img alt="Часы Eon Classic" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Classic silver analog watch with white dial on a soft beige background with elegant shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfQa1xv3hzuhMN2lgyOc16zsbsOByQA6byD1lurxICh0G7ui4pKAYT8sERzbaiNFjxG28q4NEp0GcLZ4r4OqBGitKANKPBA1yb3DqgIhf174Y1GqCXTuQeuIUZ7I4Y8EkjMYTOpW5_BRpWqnk3RMYYYsl1Vz4MeycgOynBbx74y7uqr4NU2s1wCBQgkGSm9o0Jxts6hWg3PRg_4kj6Tj3PNQaJeFSpzzYjnHkyG3kZ093xD69W4-MoqS9zZWXKigAhlNuF9yvU5aU"/>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<h4 class="font-headline-md text-headline-md mb-1 text-on-surface truncate">Часы Eon Classic</h4>
+<p class="text-label-sm text-outline mb-4">Аксессуары</p>
+<div class="mt-auto space-y-4">
+<div class="flex justify-between items-end">
+<div><span class="text-headline-md text-primary">$159.00</span></div>
+<div class="text-right"><span class="text-label-sm text-secondary flex items-center justify-end gap-1 font-bold">3д осталось</span></div>
+</div>
+<div class="space-y-1">
+<div class="w-full h-2 bg-primary/10 rounded-full overflow-hidden"><div class="h-full bg-primary" style="width: 25%"></div></div>
+</div>
+<button class="w-full py-3 bg-secondary-container text-on-secondary-container rounded-xl font-bold active:scale-95 transition-all">Вступить в группу</button>
+</div>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(13,148,136,0.1)] hover:shadow-[0_10px_30px_-5px_rgba(13,148,136,0.15)] transition-all flex flex-col group">
+<div class="relative h-48 overflow-hidden">
+<img alt="Кофемашина Barista Touch" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Premium stainless steel espresso machine with steam wand on a dark kitchen counter with warm morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACFXh1J3Mfr2jITME5nU2dK6VnmqSAAp4zrAwxCosJWY-nReGiqURMN8Nl98tOEZ_IAPpS_VzwF4BhLmWzYygV824HrsBo3MbwkfAwjGJ9026gIb7h3whsP0kdOo3g48KJkWxH7E5e4dNw9HFHtqZwoyDdCtXcvWIg_fiy1oEy0mcW0i0b8awMRLOmhOi6cxBtgE5Breta1I6XJFusWG-opKRqats_y5QcBFeiBaK_N1clztu12EBLQMay-kR_f9GLVra3QO4KlZc"/>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<h4 class="font-headline-md text-headline-md mb-1 text-on-surface truncate">Кофемашина Barista Touch</h4>
+<p class="text-label-sm text-outline mb-4">Дом и Кухня</p>
+<div class="mt-auto space-y-4">
+<div class="flex justify-between items-end">
+<div><span class="text-headline-md text-primary">$720.00</span></div>
+<div class="text-right"><span class="text-label-sm text-secondary flex items-center justify-end gap-1 font-bold">12ч осталось</span></div>
+</div>
+<div class="space-y-1">
+<div class="w-full h-2 bg-primary/10 rounded-full overflow-hidden"><div class="h-full bg-primary" style="width: 92%"></div></div>
+</div>
+<button class="w-full py-3 bg-secondary-container text-on-secondary-container rounded-xl font-bold active:scale-95 transition-all">Вступить в группу</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="mt-16 flex justify-center items-center gap-2">
+<button class="p-3 rounded-xl border border-outline-variant hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-12 h-12 rounded-xl bg-primary text-on-primary font-bold">1</button>
+<button class="w-12 h-12 rounded-xl hover:bg-surface-container transition-all font-bold">2</button>
+<button class="w-12 h-12 rounded-xl hover:bg-surface-container transition-all font-bold">3</button>
+<span class="px-2">...</span>
+<button class="w-12 h-12 rounded-xl hover:bg-surface-container transition-all font-bold">12</button>
+<button class="p-3 rounded-xl border border-outline-variant hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 px-4 md:px-12 max-w-7xl mx-auto w-full py-12">
+<div class="space-y-2">
+<div class="text-lg font-bold text-slate-900 dark:text-slate-100">CoBuy</div>
+<p class="font-['Plus_Jakarta_Sans'] text-xs font-normal text-slate-500 dark:text-slate-400">© 2024 CoBuy. Расширение возможностей сообществ через коллективную ценность.</p>
+</div>
+<nav class="flex flex-wrap justify-center gap-6">
+<a class="font-['Plus_Jakarta_Sans'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline transition-all" href="#">Поддержка</a>
+<a class="font-['Plus_Jakarta_Sans'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline transition-all" href="#">Конфиденциальность</a>
+<a class="font-['Plus_Jakarta_Sans'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline transition-all" href="#">Доставка и Возврат</a>
+<a class="font-['Plus_Jakarta_Sans'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline transition-all" href="#">Стать партнером</a>
+<a class="font-['Plus_Jakarta_Sans'] text-xs font-normal text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline transition-all" href="#">Условия</a>
+</nav>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-primary transition-colors" data-icon="facebook">social_leaderboard</span>
+<span class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-primary transition-colors" data-icon="brand_awareness">brand_awareness</span>
+</div>
+</div>
+</footer>
+</body></html>
