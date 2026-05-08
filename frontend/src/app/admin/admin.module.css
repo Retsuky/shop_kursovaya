@@ -431,8 +431,17 @@ a.btnGhost {
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  max-width: 11rem;
+  min-width: 10rem;
+  width: 100%;
+  max-width: 12rem;
+  height: 2.25rem;
   background: #fff;
+  color: #0f172a;
+}
+
+.statusSelect option {
+  color: #0f172a;
+  background: #ffffff;
 }
 
 .rowActions {
@@ -487,7 +496,7 @@ a.btnGhost {
 
 .modalPanel {
   width: 100%;
-  max-width: 36rem;
+  max-width: 72rem;
   max-height: min(85vh, 560px);
   display: flex;
   flex-direction: column;
@@ -550,6 +559,13 @@ a.btnGhost {
   padding: 16px 20px 20px;
   overflow-y: auto;
   flex: 1;
+}
+
+.modalTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
 }
 
 .organizerNote {
@@ -621,6 +637,22 @@ a.btnGhost {
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--cb-on-surface);
+}
+
+.participantInput {
+  width: 100%;
+  min-width: 140px;
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: var(--cb-on-surface);
+}
+
+.participantInput:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
 }
 
 .btnMuted {

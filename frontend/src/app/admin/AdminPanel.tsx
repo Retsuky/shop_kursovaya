@@ -31,6 +31,12 @@ type ParticipantRow = {
   user_email: string;
   avatar_url?: string | null;
   quantity: number;
+  participant_status: "assembly" | "delivery" | "handed" | string;
+  delivery_method: "pickup" | "courier" | string;
+  payment_method: "card" | "sbp" | string;
+  delivery_address: string;
+  delivery_comment: string;
+  paid_at: string;
 };
 
 type AdminPurchaseDetail = {
@@ -51,6 +57,7 @@ export default function AdminPanel() {
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [participantsDetail, setParticipantsDetail] = useState<AdminPurchaseDetail | null>(null);
   const [participantsError, setParticipantsError] = useState("");
+  const [participantsTab, setParticipantsTab] = useState<"joined" | "processing">("joined");
 
   const syncAccess = useCallback(() => {
     const session = getAuthSession();
@@ -134,6 +141,7 @@ export default function AdminPanel() {
 
   async function openParticipantsModal(purchaseId: number) {
     setParticipantsModalId(purchaseId);
+    setParticipantsTab("joined");
     setParticipantsDetail(null);
     setParticipantsError("");
     setParticipantsLoading(true);
@@ -156,6 +164,35 @@ export default function AdminPanel() {
     setParticipantsDetail(null);
     setParticipantsError("");
     setParticipantsLoading(false);
+  }
+
+  async function updateParticipantStatus(
+    purchaseId: number,
+    userId: number,
+    participantStatus: "assembly" | "delivery" | "handed"
+  ) {
+    try {
+      await api.patch(`/admin/purchases/${purchaseId}/participants/${userId}`, {
+        participant_status: participantStatus,
+      });
+      setParticipantsDetail((prev) => {
+        if (!prev || prev.purchase.id !== purchaseId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          participants: prev.participants.map((row) =>
+            row.user_id === userId ? { ...row, participant_status: participantStatus } : row
+          ),
+        };
+      });
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setParticipantsError(err.response?.data?.message ?? "Не удалось изменить статус заказа.");
+      } else {
+        setParticipantsError("Ошибка при изменении статуса заказа.");
+      }
+    }
   }
 
   useEffect(() => {
@@ -189,6 +226,27 @@ export default function AdminPanel() {
 
   if (!allowed) {
     return null;
+  }
+
+  const processingRows = participantsDetail?.participants ?? [];
+
+  function formatDateTime(iso?: string) {
+    if (!iso) {
+      return "—";
+    }
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) {
+      return "—";
+    }
+    return d.toLocaleString("ru-RU");
+  }
+
+  function deliveryLabel(method: string) {
+    return method === "courier" ? "Курьер" : "Самовывоз";
+  }
+
+  function paymentLabel(method: string) {
+    return method === "sbp" ? "СБП" : "Карта";
   }
 
   return (
@@ -353,54 +411,130 @@ export default function AdminPanel() {
                 <p className={styles.alert}>{participantsError}</p>
               ) : participantsDetail ? (
                 <>
-                  {participantsDetail.participants.length === 0 ? (
-                    <p className={styles.muted}>
-                      Пока никто не присоединился к этой закупке — ни одного участника в группе.
-                    </p>
-                  ) : (
-                    <>
-                      <table className={styles.participantTable}>
-                        <thead>
-                          <tr>
-                            <th>Участник</th>
-                            <th>Email</th>
-                            <th>User id</th>
-                            <th>Кол-во</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {participantsDetail.participants.map((row) => (
-                            <tr key={row.user_id}>
-                              <td>
-                                <div className={styles.participantUserCell}>
-                                  {row.avatar_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={row.avatar_url} alt="" className={styles.participantAvatarImg} />
-                                  ) : (
-                                    <span className={styles.participantAvatarFallback} aria-hidden>
-                                      {row.user_name?.trim()?.charAt(0)?.toUpperCase() || "?"}
-                                    </span>
-                                  )}
-                                  <span>{row.user_name}</span>
-                                </div>
-                              </td>
-                              <td>{row.user_email}</td>
-                              <td className={styles.mono}>{row.user_id}</td>
-                              <td className={styles.mono}>{row.quantity}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <p className={styles.participantSummary}>
-                        Итого: {participantsDetail.participants.length}{" "}
-                        {participantsDetail.participants.length === 1
-                          ? "участник"
-                          : participantsDetail.participants.length < 5
-                            ? "участника"
-                            : "участников"}
-                        , {participantsDetail.participants.reduce((s, r) => s + r.quantity, 0)} ед. товара по заявкам.
+                  <div className={styles.modalTabs}>
+                    <button
+                      type="button"
+                      className={participantsTab === "joined" ? styles.tabActive : styles.tab}
+                      onClick={() => setParticipantsTab("joined")}
+                    >
+                      Откликнувшиеся
+                    </button>
+                    <button
+                      type="button"
+                      className={participantsTab === "processing" ? styles.tabActive : styles.tab}
+                      onClick={() => setParticipantsTab("processing")}
+                    >
+                      Ожидают обработки
+                    </button>
+                  </div>
+
+                  {participantsTab === "joined" ? (
+                    participantsDetail.participants.length === 0 ? (
+                      <p className={styles.muted}>
+                        Пока никто не присоединился к этой закупке — ни одного участника в группе.
                       </p>
-                    </>
+                    ) : (
+                      <>
+                        <table className={styles.participantTable}>
+                          <thead>
+                            <tr>
+                              <th>Участник</th>
+                              <th>Email</th>
+                              <th>User id</th>
+                              <th>Кол-во</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {participantsDetail.participants.map((row) => (
+                              <tr key={row.user_id}>
+                                <td>
+                                  <div className={styles.participantUserCell}>
+                                    {row.avatar_url ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img src={row.avatar_url} alt="" className={styles.participantAvatarImg} />
+                                    ) : (
+                                      <span className={styles.participantAvatarFallback} aria-hidden>
+                                        {row.user_name?.trim()?.charAt(0)?.toUpperCase() || "?"}
+                                      </span>
+                                    )}
+                                    <span>{row.user_name}</span>
+                                  </div>
+                                </td>
+                                <td>{row.user_email}</td>
+                                <td className={styles.mono}>{row.user_id}</td>
+                                <td className={styles.mono}>{row.quantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <p className={styles.participantSummary}>
+                          Итого: {participantsDetail.participants.length}{" "}
+                          {participantsDetail.participants.length === 1
+                            ? "участник"
+                            : participantsDetail.participants.length < 5
+                              ? "участника"
+                              : "участников"}
+                          , {participantsDetail.participants.reduce((s, r) => s + r.quantity, 0)} ед. товара по заявкам.
+                        </p>
+                      </>
+                    )
+                  ) : processingRows.length === 0 ? (
+                    <p className={styles.muted}>Нет заказов, ожидающих обработки.</p>
+                  ) : (
+                    <table className={styles.participantTable}>
+                      <thead>
+                        <tr>
+                          <th>Пользователь</th>
+                          <th>Статус заказа</th>
+                          <th>Доставка</th>
+                          <th>Адрес</th>
+                          <th>Комментарий</th>
+                          <th>Оплата</th>
+                          <th>Дата оплаты</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {processingRows.map((row) => (
+                          <tr key={`processing-${row.user_id}`}>
+                            <td>
+                              <div className={styles.participantUserCell}>
+                                {row.avatar_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={row.avatar_url} alt="" className={styles.participantAvatarImg} />
+                                ) : (
+                                  <span className={styles.participantAvatarFallback} aria-hidden>
+                                    {row.user_name?.trim()?.charAt(0)?.toUpperCase() || "?"}
+                                  </span>
+                                )}
+                                <span>{row.user_name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <select
+                                className={styles.statusSelect}
+                                value={row.participant_status}
+                                onChange={(e) =>
+                                  void updateParticipantStatus(
+                                    participantsModalId!,
+                                    row.user_id,
+                                    e.target.value as "assembly" | "delivery" | "handed"
+                                  )
+                                }
+                              >
+                                <option value="assembly">Сборка</option>
+                                <option value="delivery">Доставка</option>
+                                <option value="handed">Вручен</option>
+                              </select>
+                            </td>
+                            <td>{deliveryLabel(row.delivery_method)}</td>
+                            <td>{row.delivery_method === "courier" ? row.delivery_address || "—" : "Не требуется"}</td>
+                            <td>{row.delivery_comment || "—"}</td>
+                            <td>{paymentLabel(row.payment_method)}</td>
+                            <td>{formatDateTime(row.paid_at)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   )}
                 </>
               ) : null}

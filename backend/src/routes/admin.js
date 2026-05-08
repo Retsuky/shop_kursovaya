@@ -13,12 +13,20 @@ router.use(requireAdmin);
 
 const PURCHASE_STATUSES = new Set([
   "collecting",
-  "payment",
-  "supplier_order",
-  "delivery",
+  "closed",
   "completed",
   "cancelled",
 ]);
+const PARTICIPANT_STATUSES = new Set(["assembly", "delivery", "handed"]);
+function normalizeParticipantStatus(raw) {
+  const s = String(raw ?? "").trim();
+  if (s === "collecting") return "assembly";
+  if (s === "completed") return "handed";
+  return s;
+}
+
+const DELIVERY_METHODS = new Set(["pickup", "courier"]);
+const PAYMENT_METHODS = new Set(["card", "sbp"]);
 
 function mapPurchase(row) {
   if (!row) return null;
@@ -146,6 +154,12 @@ router.get("/purchases/:id", async (req, res) => {
         SELECT
           pp.user_id,
           pp.quantity,
+          pp.participant_status,
+          pp.delivery_method,
+          pp.payment_method,
+          pp.delivery_address,
+          pp.delivery_comment,
+          pp.updated_at AS paid_at,
           usr.name AS user_name,
           usr.email AS user_email,
           NULLIF(trim(COALESCE(usr.avatar_url, '')), '') AS avatar_url
@@ -163,6 +177,15 @@ router.get("/purchases/:id", async (req, res) => {
       user_email: p.user_email,
       avatar_url: p.avatar_url,
       quantity: p.quantity != null ? Number(p.quantity) : 0,
+      participant_status:
+        p.participant_status != null
+          ? normalizeParticipantStatus(p.participant_status)
+          : "assembly",
+      delivery_method: p.delivery_method != null ? String(p.delivery_method) : "pickup",
+      payment_method: p.payment_method != null ? String(p.payment_method) : "card",
+      delivery_address: p.delivery_address != null ? String(p.delivery_address) : "",
+      delivery_comment: p.delivery_comment != null ? String(p.delivery_comment) : "",
+      paid_at: p.paid_at != null ? (typeof p.paid_at === "string" ? p.paid_at : p.paid_at.toISOString()) : "",
     }));
 
     return res.status(200).json({
@@ -445,6 +468,138 @@ router.delete("/purchases/:id", async (req, res) => {
   } catch (error) {
     console.error("Admin delete purchase:", error);
     return res.status(500).json({ message: "Не удалось удалить закупку." });
+  }
+});
+
+router.patch("/purchases/:id/participants/:userId", async (req, res) => {
+  const id = Number(req.params.id);
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(id) || !Number.isInteger(userId)) {
+    return res.status(400).json({ message: "Некорректные идентификаторы." });
+  }
+
+  const participantStatusRaw =
+    req.body?.participant_status != null ? String(req.body.participant_status).trim() : undefined;
+  const deliveryMethodRaw =
+    req.body?.delivery_method != null ? String(req.body.delivery_method).trim() : undefined;
+  const paymentMethodRaw =
+    req.body?.payment_method != null ? String(req.body.payment_method).trim() : undefined;
+  const deliveryAddressRaw =
+    req.body?.delivery_address != null ? String(req.body.delivery_address).trim() : undefined;
+  const deliveryCommentRaw =
+    req.body?.delivery_comment != null ? String(req.body.delivery_comment).trim() : undefined;
+
+  if (
+    participantStatusRaw === undefined &&
+    deliveryMethodRaw === undefined &&
+    paymentMethodRaw === undefined &&
+    deliveryAddressRaw === undefined &&
+    deliveryCommentRaw === undefined
+  ) {
+    return res.status(400).json({ message: "Нет полей для обновления." });
+  }
+
+  const participantStatus = participantStatusRaw !== undefined ? normalizeParticipantStatus(participantStatusRaw) : undefined;
+  if (participantStatus !== undefined && !PARTICIPANT_STATUSES.has(participantStatus)) {
+    return res.status(400).json({ message: "Некорректный статус участника." });
+  }
+  if (deliveryMethodRaw !== undefined && !DELIVERY_METHODS.has(deliveryMethodRaw)) {
+    return res.status(400).json({ message: "Некорректный способ получения." });
+  }
+  if (paymentMethodRaw !== undefined && !PAYMENT_METHODS.has(paymentMethodRaw)) {
+    return res.status(400).json({ message: "Некорректный способ оплаты." });
+  }
+  if (deliveryAddressRaw !== undefined && deliveryAddressRaw.length > 1000) {
+    return res.status(400).json({ message: "Адрес не должен превышать 1000 символов." });
+  }
+  if (deliveryCommentRaw !== undefined && deliveryCommentRaw.length > 1000) {
+    return res.status(400).json({ message: "Комментарий не должен превышать 1000 символов." });
+  }
+
+  try {
+    const existing = await pool.query(
+      `
+        SELECT delivery_method, delivery_address
+        FROM purchase_participants
+        WHERE purchase_id = $1 AND user_id = $2
+      `,
+      [id, userId]
+    );
+    if (!existing.rows[0]) {
+      return res.status(404).json({ message: "Участник закупки не найден." });
+    }
+
+    const currentDeliveryMethod = String(existing.rows[0].delivery_method ?? "pickup");
+    const currentDeliveryAddress = String(existing.rows[0].delivery_address ?? "");
+    const nextDeliveryMethod = deliveryMethodRaw ?? currentDeliveryMethod;
+    const nextDeliveryAddress = deliveryAddressRaw !== undefined ? deliveryAddressRaw : currentDeliveryAddress;
+
+    if (nextDeliveryMethod === "courier") {
+      const hasAddress = nextDeliveryAddress.trim().length > 0;
+      if (!hasAddress) {
+        return res.status(400).json({ message: "Для курьерской доставки нужен адрес." });
+      }
+    }
+
+    const updates = [];
+    const values = [];
+    const addSet = (column, value) => {
+      values.push(value);
+      updates.push(`${column} = $${values.length}`);
+    };
+    if (participantStatus !== undefined) addSet("participant_status", participantStatus);
+    if (deliveryMethodRaw !== undefined) addSet("delivery_method", deliveryMethodRaw);
+    if (paymentMethodRaw !== undefined) addSet("payment_method", paymentMethodRaw);
+    if (deliveryAddressRaw !== undefined) addSet("delivery_address", deliveryAddressRaw);
+    if (deliveryCommentRaw !== undefined) addSet("delivery_comment", deliveryCommentRaw);
+    if (deliveryMethodRaw === "pickup" && deliveryAddressRaw === undefined) {
+      addSet("delivery_address", "");
+    }
+    addSet("updated_at", new Date());
+
+    values.push(id);
+    values.push(userId);
+    await pool.query(
+      `
+        UPDATE purchase_participants
+        SET ${updates.join(", ")}
+        WHERE purchase_id = $${values.length - 1} AND user_id = $${values.length}
+      `,
+      values
+    );
+
+    const progress = await pool.query(
+      `
+        SELECT
+          COUNT(*)::int AS total,
+          COALESCE(SUM(CASE WHEN participant_status IN ('handed', 'completed') THEN 1 ELSE 0 END), 0)::int AS handed
+        FROM purchase_participants
+        WHERE purchase_id = $1
+      `,
+      [id]
+    );
+    const totalParticipants = Number(progress.rows[0]?.total ?? 0);
+    const handedParticipants = Number(progress.rows[0]?.handed ?? 0);
+    if (totalParticipants > 0 && handedParticipants >= totalParticipants) {
+      const curStatusRes = await pool.query("SELECT status FROM purchases WHERE id = $1", [id]);
+      const prevStatus = String(curStatusRes.rows[0]?.status ?? "");
+      if (prevStatus && prevStatus !== "completed") {
+        await pool.query(
+          "UPDATE purchases SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+          [id]
+        );
+        try {
+          await notifyStatusChange(pool, id, prevStatus, "completed", []);
+        } catch (notifyErr) {
+          console.error("Admin notify auto-completed:", notifyErr);
+        }
+      }
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("Admin patch participant:", error);
+    return res.status(500).json({ message: "Не удалось обновить данные участника." });
   }
 });
 

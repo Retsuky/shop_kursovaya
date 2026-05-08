@@ -16,7 +16,7 @@ import tokens from "../components/landing/landing-tokens.module.css";
 import cardStyles from "../components/catalog/catalog-product-card.module.css";
 import extra from "./admin-product-card.module.css";
 
-const ALL_STATUSES: PurchaseStatus[] = [...STATUS_ORDER, "cancelled"];
+const ALL_STATUSES: PurchaseStatus[] = [...STATUS_ORDER];
 
 function catalogOpenHint(purchase: Purchase): string | null {
   if (purchase.status === "cancelled") {
@@ -49,15 +49,11 @@ export default function AdminProductCard({
   const disc = discountPercent(purchase);
   const almost = isAlmostFull(purchase);
   const collecting = purchase.status === "collecting";
-  const closed =
-    purchase.status === "payment" ||
-    purchase.status === "supplier_order" ||
-    purchase.status === "delivery" ||
-    purchase.status === "completed";
+  const closed = purchase.status === "closed" || purchase.status === "completed";
 
   let badgeMain: { text: string; variant: "active" | "almost" | "muted" };
   if (closed) {
-    badgeMain = { text: "Выкуплено", variant: "muted" };
+    badgeMain = { text: purchase.status === "closed" ? "Набор закрыт" : "Выкуплено", variant: "muted" };
   } else if (almost) {
     badgeMain = { text: "Почти собран", variant: "almost" };
   } else {
