@@ -91,23 +91,6 @@ async function initDb() {
     `CREATE INDEX IF NOT EXISTS idx_discussion_purchase_created ON purchase_discussion_messages(purchase_id, created_at ASC)`
   );
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS purchase_reviews (
-      id SERIAL PRIMARY KEY,
-      purchase_id INTEGER NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
-      comment TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE (purchase_id, user_id),
-      CHECK (char_length(trim(comment)) <= 2000)
-    )
-  `);
-  await pool.query(
-    `CREATE INDEX IF NOT EXISTS idx_reviews_purchase_created ON purchase_reviews(purchase_id, created_at DESC)`
-  );
-
   await pool.query(
     `ALTER TABLE purchases ADD COLUMN IF NOT EXISTS category VARCHAR(120) NOT NULL DEFAULT ''`
   );

@@ -186,12 +186,6 @@ export default function PurchaseDetailPage() {
   }
 
   async function handleLeave() {
-    const ok = window.confirm("Отказаться от участия в этой закупке? Количество мест для вас будет снято.");
-
-    if (!ok) {
-      return;
-    }
-
     setActionError("");
     setPending(true);
 

@@ -113,22 +113,13 @@
 
 .stars {
   display: flex;
+  color: var(--cb-tertiary);
   gap: 2px;
 }
 
-.starFilled,
-.starEmpty {
+.star {
   font-size: 22px;
-  line-height: 1;
-  font-weight: 700;
-}
-
-.starFilled {
-  color: #c89d00;
-}
-
-.starEmpty {
-  color: #b9c3d3;
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
 .reviewsHint {
@@ -306,25 +297,6 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.joinedBanner {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  max-width: 100%;
-  padding: 8px 12px;
-  border-radius: 9999px;
-  background: rgba(0, 104, 95, 0.1);
-  color: var(--cb-primary);
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.joinedIcon {
-  font-size: 18px;
 }
 
 .qtyRow {
@@ -669,37 +641,12 @@ a.btnCoral {
 }
 
 .btnGhost {
-  box-sizing: border-box;
-  width: 100%;
-  border: 2px solid rgba(11, 28, 48, 0.16);
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-family: inherit;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.3;
-  background: #ffffff;
-  color: var(--cb-on-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  background: #fff;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.btnGhost:hover:not(:disabled) {
-  background: rgba(11, 28, 48, 0.05);
-  border-color: rgba(11, 28, 48, 0.28);
-}
-
-.btnGhost:focus-visible {
-  outline: 2px solid var(--cb-primary);
-  outline-offset: 2px;
-}
-
-.btnGhost:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 .loginHint {

@@ -1,7 +1,6 @@
 const express = require("express");
 const pool = require("../config/db");
 const requireAuth = require("../middleware/requireAuth");
-const optionalAuth = require("../middleware/optionalAuth");
 const { createNotification, notifyStatusChange } = require("../services/notifications");
 
 const router = express.Router();
@@ -36,21 +35,9 @@ function mapPurchase(row) {
     image_url: row.image_url != null ? String(row.image_url) : "",
     retail_price: row.retail_price != null ? String(row.retail_price) : null,
     participant_preview: normalizeParticipantPreview(row.participant_preview),
-    my_quantity:
-      row.my_quantity != null && row.my_quantity !== ""
-        ? Number(row.my_quantity)
-        : undefined,
-    rating_avg:
-      row.rating_avg != null && row.rating_avg !== ""
-        ? Number(row.rating_avg)
-        : undefined,
-    rating_count:
-      row.rating_count != null && row.rating_count !== ""
-        ? Number(row.rating_count)
-        : undefined,
   };
 }
-router.get("/catalog", optionalAuth, async (req, res) => {
+router.get("/catalog", async (req, res) => {
   const limit = Math.min(48, Math.max(1, parseInt(String(req.query.limit), 10) || 12));
   const offset = Math.max(0, parseInt(String(req.query.offset), 10) || 0);
   const maxPriceRaw = req.query.max_price;
@@ -119,11 +106,9 @@ router.get("/catalog", optionalAuth, async (req, res) => {
 
     const total = countResult.rows[0]?.c ?? 0;
 
-    const viewerId = req.user?.id ?? -1;
-    const dataParams = [...params, viewerId, limit, offset];
-    const viewerIdx = params.length + 1;
-    const limIdx = params.length + 2;
-    const offIdx = params.length + 3;
+    const dataParams = [...params, limit, offset];
+    const limIdx = params.length + 1;
+    const offIdx = params.length + 2;
 
     const dataResult = await pool.query(
       `
@@ -132,13 +117,7 @@ router.get("/catalog", optionalAuth, async (req, res) => {
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
-          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview,
-          (
-            SELECT ppv.quantity::int
-            FROM purchase_participants ppv
-            WHERE ppv.purchase_id = p.id AND ppv.user_id = $${viewerIdx}
-            LIMIT 1
-          ) AS my_quantity
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
         WHERE ${whereSql}
@@ -258,8 +237,6 @@ router.get("/:id", async (req, res) => {
           u.name AS organizer_name,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
-          (SELECT COALESCE(ROUND(AVG(pr.rating)::numeric, 1), 0)::numeric FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_avg,
-          (SELECT COUNT(*)::int FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_count,
           ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
@@ -666,179 +643,6 @@ function mapDiscussionMessage(row) {
         : "",
   };
 }
-
-function mapReview(row) {
-  if (!row) {
-    return null;
-  }
-  return {
-    id: row.id,
-    purchase_id: row.purchase_id,
-    user_id: row.user_id,
-    user_name: row.user_name != null ? String(row.user_name) : "",
-    email: row.email != null ? String(row.email) : "",
-    avatar_url: row.avatar_url != null ? String(row.avatar_url).trim() : "",
-    rating: row.rating != null ? Number(row.rating) : 0,
-    comment: row.comment != null ? String(row.comment) : "",
-    created_at:
-      row.created_at != null
-        ? typeof row.created_at === "string"
-          ? row.created_at
-          : row.created_at.toISOString()
-        : "",
-    updated_at:
-      row.updated_at != null
-        ? typeof row.updated_at === "string"
-          ? row.updated_at
-          : row.updated_at.toISOString()
-        : "",
-  };
-}
-
-router.get("/:id/reviews", async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id < 1) {
-    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
-  }
-  try {
-    const exists = await pool.query("SELECT id FROM purchases WHERE id = $1", [id]);
-    if (!exists.rows[0]) {
-      return res.status(404).json({ message: "Закупка не найдена." });
-    }
-
-    const summary = await pool.query(
-      `
-        SELECT
-          COALESCE(ROUND(AVG(rating)::numeric, 1), 0)::numeric AS avg_rating,
-          COUNT(*)::int AS total
-        FROM purchase_reviews
-        WHERE purchase_id = $1
-      `,
-      [id]
-    );
-
-    const rows = await pool.query(
-      `
-        SELECT
-          r.id,
-          r.purchase_id,
-          r.user_id,
-          r.rating,
-          r.comment,
-          r.created_at,
-          r.updated_at,
-          u.name AS user_name,
-          u.email,
-          COALESCE(NULLIF(trim(u.avatar_url), ''), '') AS avatar_url
-        FROM purchase_reviews r
-        INNER JOIN users u ON u.id = r.user_id
-        WHERE r.purchase_id = $1
-        ORDER BY r.updated_at DESC, r.created_at DESC
-        LIMIT 200
-      `,
-      [id]
-    );
-
-    return res.status(200).json({
-      summary: {
-        avg_rating: Number(summary.rows[0]?.avg_rating ?? 0),
-        total: Number(summary.rows[0]?.total ?? 0),
-      },
-      reviews: rows.rows.map(mapReview),
-    });
-  } catch (error) {
-    console.error("Reviews list:", error);
-    return res.status(500).json({ message: "Не удалось загрузить отзывы." });
-  }
-});
-
-router.post("/:id/reviews", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
-  const rating = Number(req.body?.rating);
-  const comment = req.body?.comment != null ? String(req.body.comment).trim() : "";
-
-  if (!Number.isInteger(id) || id < 1) {
-    return res.status(400).json({ message: "Некорректный идентификатор закупки." });
-  }
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return res.status(400).json({ message: "Оценка должна быть целым числом от 1 до 5." });
-  }
-  if (comment.length > 2000) {
-    return res.status(400).json({ message: "Комментарий не длиннее 2000 символов." });
-  }
-
-  try {
-    const pRes = await pool.query("SELECT id, organizer_id, title, status FROM purchases WHERE id = $1", [id]);
-    const purchase = pRes.rows[0];
-    if (!purchase) {
-      return res.status(404).json({ message: "Закупка не найдена." });
-    }
-
-    const joinedRes = await pool.query(
-      "SELECT 1 FROM purchase_participants WHERE purchase_id = $1 AND user_id = $2 LIMIT 1",
-      [id, req.user.id]
-    );
-    const canReview = purchase.organizer_id === req.user.id || Boolean(joinedRes.rows[0]);
-    if (!canReview) {
-      return res.status(403).json({ message: "Оставить отзыв могут только участники этой закупки." });
-    }
-
-    const saved = await pool.query(
-      `
-        INSERT INTO purchase_reviews (purchase_id, user_id, rating, comment, updated_at)
-        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-        ON CONFLICT (purchase_id, user_id)
-        DO UPDATE SET
-          rating = EXCLUDED.rating,
-          comment = EXCLUDED.comment,
-          updated_at = CURRENT_TIMESTAMP
-        RETURNING id, purchase_id, user_id, rating, comment, created_at, updated_at
-      `,
-      [id, req.user.id, rating, comment]
-    );
-
-    const userRes = await pool.query(
-      `
-        SELECT
-          name AS user_name,
-          email,
-          COALESCE(NULLIF(trim(avatar_url), ''), '') AS avatar_url
-        FROM users
-        WHERE id = $1
-      `,
-      [req.user.id]
-    );
-
-    const summary = await pool.query(
-      `
-        SELECT
-          COALESCE(ROUND(AVG(rating)::numeric, 1), 0)::numeric AS avg_rating,
-          COUNT(*)::int AS total
-        FROM purchase_reviews
-        WHERE purchase_id = $1
-      `,
-      [id]
-    );
-
-    const review = mapReview({
-      ...saved.rows[0],
-      user_name: userRes.rows[0]?.user_name ?? "Участник",
-      email: userRes.rows[0]?.email ?? "",
-      avatar_url: userRes.rows[0]?.avatar_url ?? "",
-    });
-
-    return res.status(201).json({
-      review,
-      summary: {
-        avg_rating: Number(summary.rows[0]?.avg_rating ?? 0),
-        total: Number(summary.rows[0]?.total ?? 0),
-      },
-    });
-  } catch (error) {
-    console.error("Review upsert:", error);
-    return res.status(500).json({ message: "Не удалось сохранить отзыв." });
-  }
-});
 
 router.get("/:id/discussion", async (req, res) => {
   const id = Number(req.params.id);

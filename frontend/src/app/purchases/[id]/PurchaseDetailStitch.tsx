@@ -15,11 +15,10 @@ import {
   formatRub,
   formatTimeLeft,
   isAlmostFull,
-  isGroupMinimumMet,
   purchasePricePresentation,
 } from "../../../lib/catalogDisplay";
 import ParticipantAvatar from "../../../lib/ParticipantAvatar";
-import PurchaseReviews from "./PurchaseDiscussion";
+import PurchaseDiscussion from "./PurchaseDiscussion";
 import type { Purchase, PurchaseStatus } from "../../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../../lib/purchasesMeta";
 import styles from "./purchase-detail-stitch.module.css";
@@ -73,8 +72,6 @@ export default function PurchaseDetailStitch({
   onShare,
 }: PurchaseDetailStitchProps) {
   const [tab, setTab] = useState<"about" | "participants">("about");
-  const [ratingAvg, setRatingAvg] = useState<number>(Number(purchase.rating_avg ?? 0));
-  const [ratingCount, setRatingCount] = useState<number>(Number(purchase.rating_count ?? 0));
 
   const imageUrl = purchase.image_url?.trim() || "";
   const pricePres = purchasePricePresentation(purchase);
@@ -95,11 +92,6 @@ export default function PurchaseDetailStitch({
   const extraAv = Math.max(0, c - avatarParticipants.length);
 
   const categoryLabel = purchase.category?.trim() || "Групповая сделка";
-  const showGroupPriceSpec =
-    purchase.status !== "cancelled" &&
-    (purchase.status !== "collecting" || isGroupMinimumMet(purchase));
-  const avgRounded = Math.round(ratingAvg * 10) / 10;
-  const filledStars = Math.max(0, Math.min(5, Math.round(ratingAvg)));
 
   return (
     <div className={`${tokens.root} ${homeLanding.landing} ${styles.pageWrap}`}>
@@ -138,15 +130,13 @@ export default function PurchaseDetailStitch({
               <h1 className={styles.title}>{purchase.title}</h1>
               <div className={styles.starsRow}>
                 <div className={styles.stars}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className={i < filledStars ? styles.starFilled : styles.starEmpty}>
-                      {i < filledStars ? "★" : "☆"}
+                  {["star", "star", "star", "star", "star_half"].map((icon, i) => (
+                    <span key={i} className={`material-symbols-outlined ${styles.star}`}>
+                      {icon}
                     </span>
                   ))}
                 </div>
-                <span className={styles.reviewsHint}>
-                  {ratingCount > 0 ? `${avgRounded} · отзывов: ${ratingCount}` : "Пока нет отзывов"}
-                </span>
+                <span className={styles.reviewsHint}>Рейтинг сообщества CoBuy</span>
               </div>
               <p className={styles.lead}>
                 {purchase.description?.trim()
@@ -212,13 +202,6 @@ export default function PurchaseDetailStitch({
             </div>
 
             <div className={styles.actions}>
-              {myParticipant ? (
-                <div className={styles.joinedBanner}>
-                  <span className={`material-symbols-outlined ${styles.joinedIcon}`}>task_alt</span>
-                  Вы откликнулись на заявку
-                </div>
-              ) : null}
-
               {isOrganizer && purchase.status !== "cancelled" && purchase.status !== "completed" ? (
                 <div className={styles.organizerPanel}>
                   <p className={styles.metaStatus}>
@@ -245,7 +228,7 @@ export default function PurchaseDetailStitch({
 
               {deadlinePassed && collecting ? <p className={styles.warning}>Срок сбора истёк — новые заявки недоступны.</p> : null}
 
-              {showJoinUi && session && !myParticipant ? (
+              {showJoinUi && session ? (
                 <form onSubmit={onJoin}>
                   <div className={styles.qtyRow}>
                     <label htmlFor="join-qty">Количество</label>
@@ -260,16 +243,15 @@ export default function PurchaseDetailStitch({
                   </div>
                   <div className={styles.actions} style={{ marginTop: 12 }}>
                     <button type="submit" className={styles.btnCoral} disabled={pending}>
-                      Присоединиться к сделке
+                      {myParticipant ? "Обновить заявку" : "Присоединиться к сделке"}
                     </button>
+                    {myParticipant ? (
+                      <button type="button" className={styles.btnGhost} disabled={pending} onClick={onLeave}>
+                        Выйти из закупки
+                      </button>
+                    ) : null}
                   </div>
                 </form>
-              ) : null}
-
-              {showJoinUi && session && myParticipant ? (
-                <button type="button" className={styles.btnGhost} disabled={pending} onClick={onLeave}>
-                  Отказаться от участия
-                </button>
               ) : null}
 
               {showJoinUi && !session ? (
@@ -352,12 +334,8 @@ export default function PurchaseDetailStitch({
                     <div className={styles.specValue}>{purchase.product_name}</div>
                     <div className={styles.specLabel}>Категория</div>
                     <div className={styles.specValue}>{categoryLabel}</div>
-                    {showGroupPriceSpec ? (
-                      <>
                     <div className={styles.specLabel}>Групповая цена</div>
                     <div className={styles.specValue}>{formatRub(purchase.unit_price)}</div>
-                      </>
-                    ) : null}
                     <div className={styles.specLabel}>Розница</div>
                     <div className={styles.specValue}>
                       {purchase.retail_price?.toString().trim()
@@ -378,15 +356,14 @@ export default function PurchaseDetailStitch({
                     <div className={styles.specValue}>{participantsLabel}</div>
                   </div>
                   <div className={styles.discussCard}>
-                    <h3 className={styles.discussTitle}>Отзывы</h3>
-                    <PurchaseReviews
+                    <h3 className={styles.discussTitle}>Обсуждение</h3>
+                    <p className={styles.discussMuted}>
+                      Вопросы организатору и участникам. Сообщения видны всем, кто открыл страницу закупки.
+                    </p>
+                    <PurchaseDiscussion
                       purchaseId={purchase.id}
                       session={session}
                       readOnly={purchase.status === "cancelled"}
-                      onSummaryChange={(s) => {
-                        setRatingAvg(s.avg);
-                        setRatingCount(s.total);
-                      }}
                     />
                   </div>
                 </>

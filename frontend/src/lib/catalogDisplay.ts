@@ -126,12 +126,6 @@ export function catalogProgress(purchase: Purchase): { percent: number; particip
   };
 }
 
-/** Пользователь уже участвует в закупке (есть заявка). */
-export function hasParticipantResponse(purchase: Purchase): boolean {
-  const q = purchase.my_quantity;
-  return q != null && Number(q) > 0;
-}
-
 export function discountPercent(purchase: Purchase): number | null {
   if (!isGroupMinimumMet(purchase)) {
     return null;

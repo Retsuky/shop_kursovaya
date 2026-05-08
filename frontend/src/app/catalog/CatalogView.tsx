@@ -243,11 +243,7 @@ export default function CatalogView() {
 
             <div className={styles.grid}>
               {items.map((p) => (
-                <CatalogProductCard
-                  key={p.id}
-                  purchase={p}
-                  alreadyJoined={p.my_quantity != null && p.my_quantity > 0}
-                />
+                <CatalogProductCard key={p.id} purchase={p} />
               ))}
             </div>
 

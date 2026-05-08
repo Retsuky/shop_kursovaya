@@ -1,14 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Purchase } from "../../../lib/purchasesMeta";
-import {
-  addPurchaseToCart,
-  canReserveInCart,
-  getCart,
-  removeCartLine,
-  subscribeToCartChanges,
-} from "../../../lib/cart";
+import { addPurchaseToCart, canReserveInCart } from "../../../lib/cart";
 import styles from "./add-to-cart-button.module.css";
 
 type Props = {
@@ -16,27 +10,16 @@ type Props = {
 };
 
 export default function AddToCartButton({ purchase }: Props) {
-  const [inCart, setInCart] = useState(false);
+  const [hint, setHint] = useState<string | null>(null);
   const allowed = canReserveInCart(purchase);
-
-  useEffect(() => {
-    const sync = () => {
-      const exists = getCart().some((line) => line.purchaseId === purchase.id);
-      setInCart(exists);
-    };
-    sync();
-    return subscribeToCartChanges(sync);
-  }, [purchase.id]);
 
   const handleClick = () => {
     if (!allowed) {
       return;
     }
-    if (inCart) {
-      removeCartLine(purchase.id);
-      return;
-    }
     addPurchaseToCart(purchase, 1);
+    setHint("В корзине");
+    window.setTimeout(() => setHint(null), 2000);
   };
 
   if (!allowed) {
@@ -49,7 +32,7 @@ export default function AddToCartButton({ purchase }: Props) {
 
   return (
     <button type="button" className={styles.btn} onClick={handleClick}>
-      {inCart ? "Удалить из корзины" : "В корзину"}
+      {hint ?? "В корзину"}
     </button>
   );
 }

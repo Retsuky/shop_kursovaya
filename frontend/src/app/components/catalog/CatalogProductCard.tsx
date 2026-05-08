@@ -15,10 +15,9 @@ import styles from "./catalog-product-card.module.css";
 
 type Props = {
   purchase: Purchase;
-  alreadyJoined?: boolean;
 };
 
-export default function CatalogProductCard({ purchase, alreadyJoined = false }: Props) {
+export default function CatalogProductCard({ purchase }: Props) {
   const pricePres = purchasePricePresentation(purchase);
   const { percent, participantsLabel } = catalogProgress(purchase);
   const disc = discountPercent(purchase);
@@ -45,13 +44,8 @@ export default function CatalogProductCard({ purchase, alreadyJoined = false }: 
   const imageUrl = purchase.image_url?.trim() || "";
 
   const categoryLabel = purchase.category?.trim() || "Без категории";
-  const ctaLabel = alreadyJoined
-    ? "Открыть заявку"
-    : almost && collecting
-      ? "Последнее место! Вступить"
-      : closed
-        ? "Подробнее"
-        : "Вступить в группу";
+  const ctaLabel =
+    almost && collecting ? "Последнее место! Вступить" : closed ? "Подробнее" : "Вступить в группу";
 
   const preview = purchase.participant_preview ?? [];
   const avatarSlots = preview.slice(0, 3);
@@ -92,12 +86,6 @@ export default function CatalogProductCard({ purchase, alreadyJoined = false }: 
       <div className={styles.body}>
         <h2 className={styles.name}>{purchase.title}</h2>
         <p className={styles.category}>{categoryLabel}</p>
-        {alreadyJoined ? (
-          <div className={styles.joinedBanner}>
-            <span className={`material-symbols-outlined ${styles.joinedIcon}`}>task_alt</span>
-            Вы откликнулись на заявку
-          </div>
-        ) : null}
 
         <div className={styles.metaRow}>
           <div>
