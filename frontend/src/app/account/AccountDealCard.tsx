@@ -48,6 +48,7 @@ export default function AccountDealCard({ purchase, role }: Props) {
   const pc = purchase.participant_count ?? 0;
   const avatarExtra = Math.max(0, pc - avatarSlots.length);
   const participantStatusLabelMap: Record<string, string> = {
+    processing: "Обработка",
     assembly: "Сборка",
     delivery: "Доставка",
     handed: "Вручен",

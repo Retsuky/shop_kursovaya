@@ -9,6 +9,7 @@ const {
   notifyStatusChange,
   notifyParticipantDeliveryStatusChange,
 } = require("../services/notifications");
+const { promoteAssemblyToProcessingAfterClose } = require("../lib/participantOrderFlow");
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ const PURCHASE_STATUSES = new Set([
   "completed",
   "cancelled",
 ]);
-const PARTICIPANT_STATUSES = new Set(["assembly", "delivery", "handed"]);
+const PARTICIPANT_STATUSES = new Set(["assembly", "processing", "delivery", "handed"]);
 function normalizeParticipantStatus(raw) {
   const s = String(raw ?? "").trim();
   if (s === "collecting") return "assembly";
@@ -443,6 +444,13 @@ router.patch("/purchases/:id", async (req, res) => {
         await notifyStatusChange(pool, id, prevStatus, row.status, []);
       } catch (notifyErr) {
         console.error("Admin notify status:", notifyErr);
+      }
+    }
+    if (String(prevStatus ?? "").trim() === "collecting" && String(row?.status ?? "").trim() === "closed") {
+      try {
+        await promoteAssemblyToProcessingAfterClose(pool, id);
+      } catch (promoteErr) {
+        console.error("Admin promote participants after close:", promoteErr);
       }
     }
 

@@ -25,13 +25,15 @@ type AdminUserRow = {
   avatar_url?: string | null;
 };
 
+type ParticipantOrderStatus = "processing" | "assembly" | "delivery" | "handed";
+
 type ParticipantRow = {
   user_id: number;
   user_name: string;
   user_email: string;
   avatar_url?: string | null;
   quantity: number;
-  participant_status: "assembly" | "delivery" | "handed" | string;
+  participant_status: ParticipantOrderStatus | string;
   delivery_method: "pickup" | "courier" | string;
   payment_method: "card" | "sbp" | string;
   delivery_address: string;
@@ -169,7 +171,7 @@ export default function AdminPanel() {
   async function updateParticipantStatus(
     purchaseId: number,
     userId: number,
-    participantStatus: "assembly" | "delivery" | "handed"
+    participantStatus: ParticipantOrderStatus
   ) {
     try {
       await api.patch(`/admin/purchases/${purchaseId}/participants/${userId}`, {
@@ -517,10 +519,11 @@ export default function AdminPanel() {
                                   void updateParticipantStatus(
                                     participantsModalId!,
                                     row.user_id,
-                                    e.target.value as "assembly" | "delivery" | "handed"
+                                    e.target.value as ParticipantOrderStatus
                                   )
                                 }
                               >
+                                <option value="processing">Обработка</option>
                                 <option value="assembly">Сборка</option>
                                 <option value="delivery">Доставка</option>
                                 <option value="handed">Вручен</option>

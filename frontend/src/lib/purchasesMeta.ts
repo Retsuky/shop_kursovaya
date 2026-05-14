@@ -54,7 +54,7 @@ export type Purchase = {
   participant_count?: number;
   total_quantity?: number;
   my_quantity?: number;
-  my_participant_status?: "assembly" | "delivery" | "handed" | string;
+  my_participant_status?: "processing" | "assembly" | "delivery" | "handed" | string;
   category?: string;
   image_url?: string;
   retail_price?: string | null;

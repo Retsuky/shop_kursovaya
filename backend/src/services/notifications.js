@@ -11,6 +11,7 @@ const STATUS_RU = {
 };
 
 const DELIVERY_STATUS_RU = {
+  processing: "Обработка",
   assembly: "Сборка",
   delivery: "Доставка",
   handed: "Вручен",

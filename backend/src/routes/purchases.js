@@ -13,9 +13,10 @@ const {
   PARTICIPANT_PREVIEW_SQL,
   normalizeParticipantPreview,
 } = require("../lib/participantPreview");
+const { promoteAssemblyToProcessingAfterClose } = require("../lib/participantOrderFlow");
 
 const PURCHASE_STATUSES = new Set(["collecting", "closed", "completed", "cancelled"]);
-const PARTICIPANT_STATUSES = new Set(["assembly", "delivery", "handed"]);
+const PARTICIPANT_STATUSES = new Set(["processing","assembly", "delivery", "handed"]);
 const DELIVERY_METHODS = new Set(["pickup", "courier"]);
 const PAYMENT_METHODS = new Set(["card", "sbp"]);
 
@@ -515,6 +516,13 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       nextStatus,
       id,
     ]);
+    if (prev === "collecting" && nextStatus === "closed") {
+      try {
+        await promoteAssemblyToProcessingAfterClose(pool, id);
+      } catch (promoteErr) {
+        console.error("Promote participants after close:", promoteErr);
+      }
+    }
     try {
       await notifyStatusChange(pool, id, prev, nextStatus, [req.user.id]);
     } catch (notifyErr) {
@@ -643,6 +651,11 @@ router.post("/:id/join", requireAuth, async (req, res) => {
     const minParticipants = Math.max(1, Number(purchase.min_participants ?? 1));
     if (participantsCount >= minParticipants && purchase.status === "collecting") {
       await pool.query(`UPDATE purchases SET status = 'closed', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [id]);
+      try {
+        await promoteAssemblyToProcessingAfterClose(pool, id);
+      } catch (promoteErr) {
+        console.error("Promote participants after auto-close:", promoteErr);
+      }
       try {
         await notifyGroupDiscountReached(pool, id, []);
       } catch (notifyErr) {
