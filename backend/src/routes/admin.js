@@ -85,6 +85,46 @@ router.get("/users", async (req, res) => {
   }
 });
 
+router.patch("/users/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: "Некорректный идентификатор." });
+  }
+
+  const raw = req.body?.is_admin;
+  if (typeof raw !== "boolean") {
+    return res.status(400).json({ message: "Укажите булево поле is_admin." });
+  }
+
+  try {
+    const u = await pool.query("SELECT id, is_admin FROM users WHERE id = $1", [id]);
+    if (!u.rows[0]) {
+      return res.status(404).json({ message: "Пользователь не найден." });
+    }
+
+    const wasAdmin = u.rows[0].is_admin === true;
+    if (!raw && wasAdmin) {
+      const cnt = await pool.query(`SELECT COUNT(*)::int AS c FROM users WHERE is_admin = TRUE`);
+      if (Number(cnt.rows[0]?.c ?? 0) <= 1) {
+        return res.status(400).json({ message: "Нельзя снять права администратора с последнего администратора." });
+      }
+    }
+
+    await pool.query("UPDATE users SET is_admin = $1 WHERE id = $2", [raw, id]);
+
+    const out = await pool.query(
+      `SELECT id, name, email, created_at, is_admin,
+        NULLIF(trim(COALESCE(avatar_url, '')), '') AS avatar_url
+      FROM users WHERE id = $1`,
+      [id]
+    );
+    return res.status(200).json(out.rows[0]);
+  } catch (error) {
+    console.error("Admin patch user:", error);
+    return res.status(500).json({ message: "Не удалось обновить пользователя." });
+  }
+});
+
 router.delete("/users/:id", async (req, res) => {
   const id = Number(req.params.id);
 

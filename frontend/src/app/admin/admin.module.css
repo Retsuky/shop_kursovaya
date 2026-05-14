@@ -350,6 +350,24 @@ a.btnGhost {
   box-sizing: border-box;
 }
 
+.btnGhost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btnGhost:disabled:hover {
+  border-color: #e2e8f0;
+  color: var(--cb-on-surface-variant);
+}
+
+.userActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .btnDanger {
   border: none;
   border-radius: 10px;

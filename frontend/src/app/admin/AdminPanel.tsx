@@ -9,7 +9,8 @@ import MarketingHeader from "../components/landing/MarketingHeader";
 import tokens from "../components/landing/landing-tokens.module.css";
 import homeLanding from "../home/home-landing.module.css";
 import api from "../../lib/api";
-import { getAuthSession, subscribeToAuthChanges } from "../../lib/auth";
+import { getAuthSession, saveAuthSession, subscribeToAuthChanges } from "../../lib/auth";
+import type { AuthUser } from "../../lib/auth";
 import { formatRub } from "../../lib/catalogDisplay";
 import type { Purchase, PurchaseStatus } from "../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../lib/purchasesMeta";
@@ -226,6 +227,25 @@ export default function AdminPanel() {
     }
   }
 
+  async function patchUserAdmin(userId: number, isAdmin: boolean) {
+    setError("");
+    try {
+      const { data } = await api.patch<AdminUserRow>(`/admin/users/${userId}`, { is_admin: isAdmin });
+      setUsers((prev) => prev.map((row) => (row.id === userId ? { ...row, ...data } : row)));
+      const session = getAuthSession();
+      if (session?.user.id === userId) {
+        const me = await api.get<{ user: AuthUser }>("/auth/me");
+        saveAuthSession({ token: session.token, user: me.data.user });
+      }
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Не удалось изменить роль.");
+      } else {
+        setError("Ошибка сети.");
+      }
+    }
+  }
+
   if (!allowed) {
     return null;
   }
@@ -338,12 +358,14 @@ export default function AdminPanel() {
                     <th>Имя</th>
                     <th>Email</th>
                     <th>Роль</th>
-                    <th />
+                    <th>Действия</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u) => {
                     const avatar = typeof u.avatar_url === "string" ? u.avatar_url.trim() : "";
+                    const adminCount = users.filter((x) => x.is_admin).length;
+                    const cannotRevokeLastAdmin = u.is_admin && adminCount <= 1;
                     return (
                     <tr key={u.id}>
                       <td className={styles.mono}>{u.id}</td>
@@ -360,9 +382,34 @@ export default function AdminPanel() {
                       <td>{u.email}</td>
                       <td>{u.is_admin ? <span className={styles.adminPill}>Админ</span> : "—"}</td>
                       <td>
-                        <button type="button" className={styles.btnDanger} onClick={() => void removeUser(u.id)}>
-                          Удалить
-                        </button>
+                        <div className={styles.userActions}>
+                          {u.is_admin ? (
+                            <button
+                              type="button"
+                              className={styles.btnGhost}
+                              disabled={cannotRevokeLastAdmin}
+                              title={
+                                cannotRevokeLastAdmin
+                                  ? "Должен остаться хотя бы один администратор"
+                                  : "Снять права администратора"
+                              }
+                              onClick={() => void patchUserAdmin(u.id, false)}
+                            >
+                              Снять админа
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className={styles.btnGhost}
+                              onClick={() => void patchUserAdmin(u.id, true)}
+                            >
+                              Сделать админом
+                            </button>
+                          )}
+                          <button type="button" className={styles.btnDanger} onClick={() => void removeUser(u.id)}>
+                            Удалить
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
