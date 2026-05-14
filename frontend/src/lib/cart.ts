@@ -1,5 +1,6 @@
 import type { Purchase } from "./purchasesMeta";
 import { resolvePurchaseUnitPriceRaw } from "./catalogDisplay";
+import api from "./api";
 
 const STORAGE_KEY = "shop_cart_v1";
 const EVENT_NAME = "shop-cart-changed";
@@ -85,45 +86,89 @@ export function clearCart() {
   persist([]);
 }
 
-export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
-  const q = 1;
-  const cart = getCart();
-  const imageUrl = purchase.image_url?.trim() ?? "";
-  const city = purchase.city?.trim() || undefined;
-  const pickupAddress = purchase.pickup_address?.trim() || undefined;
-  const deadline = purchase.deadline?.trim() || undefined;
-  const groupSnapshot = {
+/** Актуальная строка корзины по закупке (цена с учётом минимума участников и снимок полей). */
+export function cartLineFromPurchase(purchase: Purchase, existingLine?: CartLine): CartLine {
+  const newImg = purchase.image_url?.trim() ?? "";
+  const imageUrl = newImg || existingLine?.imageUrl?.trim() || "";
+  return {
+    purchaseId: purchase.id,
+    title: purchase.title,
+    productName: purchase.product_name,
+    unitPrice: resolvePurchaseUnitPriceRaw(purchase),
+    imageUrl,
+    quantity: 1,
+    city: purchase.city?.trim() || undefined,
+    pickupAddress: purchase.pickup_address?.trim() || undefined,
+    deadline: purchase.deadline?.trim() || undefined,
     purchaseStatus: String(purchase.status),
     minParticipants: purchase.min_participants,
     participantCount: purchase.participant_count,
   };
+}
+
+function cartLineEqual(a: CartLine, b: CartLine): boolean {
+  return (
+    a.purchaseId === b.purchaseId &&
+    a.title === b.title &&
+    a.productName === b.productName &&
+    a.unitPrice === b.unitPrice &&
+    a.imageUrl === b.imageUrl &&
+    a.quantity === b.quantity &&
+    a.city === b.city &&
+    a.pickupAddress === b.pickupAddress &&
+    a.deadline === b.deadline &&
+    a.purchaseStatus === b.purchaseStatus &&
+    a.minParticipants === b.minParticipants &&
+    a.participantCount === b.participantCount
+  );
+}
+
+/**
+ * Подтягивает с сервера каждую закупку из корзины и обновляет цену/участников
+ * (например, после набора минимума — групповая цена вместо розницы).
+ */
+export async function refreshCartLinesFromServer(): Promise<boolean> {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const cart = getCart();
+  if (cart.length === 0) {
+    return false;
+  }
+  const next = [...cart];
+  let changed = false;
+  for (let i = 0; i < next.length; i++) {
+    const before = next[i];
+    try {
+      const res = await api.get<{ purchase: Purchase }>(`/purchases/${before.purchaseId}`);
+      const purchase = res.data?.purchase;
+      if (!purchase) {
+        continue;
+      }
+      const merged = cartLineFromPurchase(purchase, before);
+      if (!cartLineEqual(before, merged)) {
+        next[i] = merged;
+        changed = true;
+      }
+    } catch {
+      /* оставляем строку без изменений */
+    }
+  }
+  if (changed) {
+    persist(next);
+  }
+  return changed;
+}
+
+export function addPurchaseToCart(purchase: Purchase, quantity = 1) {
+  void quantity;
+  const cart = getCart();
   const idx = cart.findIndex((l) => l.purchaseId === purchase.id);
+  const line = cartLineFromPurchase(purchase, idx >= 0 ? cart[idx] : undefined);
   if (idx >= 0) {
-    cart[idx] = {
-      ...cart[idx],
-      quantity: 1,
-      title: purchase.title,
-      productName: purchase.product_name,
-      unitPrice: resolvePurchaseUnitPriceRaw(purchase),
-      imageUrl,
-      city,
-      pickupAddress,
-      deadline,
-      ...groupSnapshot,
-    };
+    cart[idx] = line;
   } else {
-    cart.push({
-      purchaseId: purchase.id,
-      title: purchase.title,
-      productName: purchase.product_name,
-      unitPrice: resolvePurchaseUnitPriceRaw(purchase),
-      imageUrl,
-      quantity: q,
-      city,
-      pickupAddress,
-      deadline,
-      ...groupSnapshot,
-    });
+    cart.push(line);
   }
   persist(cart);
 }

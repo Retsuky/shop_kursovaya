@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import MarketingFooter from "../components/landing/MarketingFooter";
 import MarketingHeader from "../components/landing/MarketingHeader";
@@ -13,6 +13,7 @@ import {
   clearCart,
   getCart,
   isCartLineGroupMinimumMet,
+  refreshCartLinesFromServer,
   subscribeToCartChanges,
   type CartLine,
 } from "../../lib/cart";
@@ -123,6 +124,34 @@ export default function CheckoutView() {
       router.replace("/cart");
     }
   }, [cartReady, lines.length, router]);
+
+  const checkoutCartKey = useMemo(() => lines.map((l) => l.purchaseId).join(","), [lines]);
+
+  useEffect(() => {
+    if (!cartReady || checkoutCartKey.length === 0) {
+      return undefined;
+    }
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled || document.visibilityState !== "visible") {
+        return;
+      }
+      void refreshCartLinesFromServer();
+    };
+    tick();
+    const intervalId = window.setInterval(tick, 25_000);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void refreshCartLinesFromServer();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [cartReady, checkoutCartKey]);
 
   const subtotal = lines.reduce((s, l) => s + lineSubtotal(l), 0);
   const deliveryNote =

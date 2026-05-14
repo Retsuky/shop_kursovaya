@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import MarketingFooter from "../components/landing/MarketingFooter";
 import MarketingHeader from "../components/landing/MarketingHeader";
 import homeLanding from "../home/home-landing.module.css";
 import {
   clearCart,
   getCart,
+  refreshCartLinesFromServer,
   removeCartLine,
   subscribeToCartChanges,
   type CartLine,
@@ -29,6 +30,34 @@ export default function CartView() {
     sync();
     return subscribeToCartChanges(sync);
   }, [sync]);
+
+  const cartPurchaseKey = useMemo(() => lines.map((l) => l.purchaseId).join(","), [lines]);
+
+  useEffect(() => {
+    if (!cartPurchaseKey) {
+      return undefined;
+    }
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled || document.visibilityState !== "visible") {
+        return;
+      }
+      void refreshCartLinesFromServer();
+    };
+    tick();
+    const intervalId = window.setInterval(tick, 25_000);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void refreshCartLinesFromServer();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [cartPurchaseKey]);
 
   const totalQty = lines.reduce((s, l) => s + l.quantity, 0);
   const subtotal = lines.reduce((s, l) => {
