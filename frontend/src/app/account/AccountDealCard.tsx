@@ -36,12 +36,9 @@ export default function AccountDealCard({ purchase, role }: Props) {
   const progressLabel =
     percent >= 100 && collecting ? "Цель достигнута!" : `Достигнуто ${percent}%`;
 
-  const cta: { href: string; label: string; outline?: boolean } =
-    role === "organizer" && collecting
-      ? { href: `/purchases/${purchase.id}`, label: "Ускорить сбор" }
-      : orderPlaced
-          ? { href: `/purchases/${purchase.id}`, label: "Открыть", outline: true }
-          : { href: `/purchases/${purchase.id}`, label: "Открыть" };
+  const cta: { href: string; label: string; outline?: boolean } = orderPlaced
+    ? { href: `/purchases/${purchase.id}`, label: "Открыть", outline: status === "closed" }
+    : { href: `/purchases/${purchase.id}`, label: "Открыть" };
 
   const previewParticipants = purchase.participant_preview ?? [];
   const avatarSlots = previewParticipants.slice(0, 3);

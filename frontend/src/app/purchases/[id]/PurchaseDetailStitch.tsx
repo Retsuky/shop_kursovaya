@@ -218,26 +218,14 @@ export default function PurchaseDetailStitch({
               ) : null}
 
               {isOrganizer && purchase.status !== "cancelled" && purchase.status !== "completed" ? (
-                <div className={styles.organizerPanel}>
+                <div className={styles.organizerMeta}>
                   <p className={styles.metaStatus}>
                     Вы организатор · {STATUS_LABELS[purchase.status as PurchaseStatus] ?? purchase.status}
                   </p>
-                  <p>
+                  <p className={styles.organizerTotals}>
                     В заявках: <strong>{purchase.total_quantity ?? 0}</strong> шт. · Сумма:{" "}
                     <strong>{totalSum.toLocaleString("ru-RU")} ₽</strong>
                   </p>
-                  <div className={styles.orgActions}>
-                    {nextStatus ? (
-                      <button type="button" className={styles.btnTeal} disabled={pending} onClick={onAdvanceStatus}>
-                        Далее: {STATUS_LABELS[nextStatus]}
-                      </button>
-                    ) : null}
-                    {purchase.status !== "cancelled" ? (
-                      <button type="button" className={styles.btnDanger} disabled={pending} onClick={onCancel}>
-                        Отменить закупку
-                      </button>
-                    ) : null}
-                  </div>
                 </div>
               ) : null}
 
@@ -282,14 +270,29 @@ export default function PurchaseDetailStitch({
                 Пригласить друзей
               </button>
 
-              {(collecting || closed) && !deadlinePassed ? (
+              {isOrganizer && purchase.status !== "cancelled" && purchase.status !== "completed" ? (
+                <div className={styles.orgActions}>
+                  {nextStatus ? (
+                    <button type="button" className={styles.btnTeal} disabled={pending} onClick={onAdvanceStatus}>
+                      Далее: {STATUS_LABELS[nextStatus]}
+                    </button>
+                  ) : null}
+                  {purchase.status !== "cancelled" ? (
+                    <button type="button" className={styles.btnDanger} disabled={pending} onClick={onCancel}>
+                      Отменить закупку
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {(collecting || closed) && !deadlinePassed && !isOrganizer ? (
                 <div className={styles.cartSlot}>
                   <AddToCartButton purchase={purchase} alreadyJoined={Boolean(myParticipant)} />
                 </div>
               ) : null}
             </div>
 
-            <div className={styles.organizerPanel}>
+            <div className={styles.organizerFacts}>
               <p>
                 <strong>Организатор:</strong> {purchase.organizer_name ?? "—"}
               </p>

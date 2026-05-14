@@ -403,15 +403,33 @@ a.btnCoral {
   font-size: 22px;
 }
 
-.organizerPanel {
-  padding: 16px;
-  border-radius: 12px;
-  background: var(--cb-surface-container-low);
-  border: 1px solid #e2e8f0;
+.organizerMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-size: 0.875rem;
+  color: var(--cb-on-surface);
 }
 
-.organizerPanel strong {
+.organizerTotals {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.organizerTotals strong {
+  color: var(--cb-primary);
+}
+
+.organizerFacts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: var(--cb-on-surface);
+}
+
+.organizerFacts strong {
   color: var(--cb-primary);
 }
 
@@ -634,13 +652,16 @@ a.btnCoral {
 .orgActions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .btnTeal {
+  box-sizing: border-box;
+  width: 100%;
   border: none;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 14px 20px;
+  font-size: 1rem;
   font-weight: 700;
   background: var(--cb-primary);
   color: #fff;
@@ -653,13 +674,29 @@ a.btnCoral {
 }
 
 .btnDanger {
-  border: 1px solid rgba(220, 44, 79, 0.5);
+  box-sizing: border-box;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(220, 44, 79, 0.55);
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 14px 20px;
+  font-size: 1rem;
   font-weight: 700;
-  background: #fff;
+  background: transparent;
   color: var(--cb-secondary-container);
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btnDanger:hover:not(:disabled) {
+  background: rgba(220, 44, 79, 0.08);
+}
+
+.btnDanger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .secondaryActions {
