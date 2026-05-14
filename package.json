@@ -8,7 +8,10 @@
     "dev:backend": "pnpm --dir backend run dev",
     "build": "npm run build --prefix frontend",
     "start": "npm run start --prefix frontend",
-    "lint": "npm run lint --prefix frontend"
+    "lint": "npm run lint --prefix frontend",
+    "docker:up": "docker compose up --build",
+    "docker:up:detached": "docker compose up --build -d",
+    "docker:down": "docker compose down"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
