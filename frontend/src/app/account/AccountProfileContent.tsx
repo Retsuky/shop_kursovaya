@@ -324,9 +324,7 @@ export default function AccountProfileContent() {
           </div>
           <div className={styles.statChip}>
             <span className={styles.statLabel}>Активных сделок</span>
-            <span className={styles.statValue}>
-              {String(activeDeals.length).padStart(2, "0")}
-            </span>
+            <span className={styles.statValue}>{activeDeals.length}</span>
           </div>
         </div>
       </div>
