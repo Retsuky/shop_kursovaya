@@ -81,6 +81,13 @@ function lineSubtotal(line: CartLine): number {
   return Number.isFinite(unit) ? unit * line.quantity : 0;
 }
 
+type OrganizerRequisites = {
+  organizer_id: number;
+  organizer_name: string;
+  payment_details: string;
+  purchases: { id: number; title: string }[];
+};
+
 export default function CheckoutView() {
   const router = useRouter();
   const [lines, setLines] = useState<CartLine[]>([]);
@@ -94,6 +101,8 @@ export default function CheckoutView() {
   const [courierDraftReady, setCourierDraftReady] = useState(false);
   const [submitPending, setSubmitPending] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [organizersRequisites, setOrganizersRequisites] = useState<OrganizerRequisites[]>([]);
+  const [requisitesLoading, setRequisitesLoading] = useState(false);
 
   const sync = useCallback(() => {
     setLines(getCart());
@@ -152,6 +161,37 @@ export default function CheckoutView() {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [cartReady, checkoutCartKey]);
+
+  useEffect(() => {
+    if (!cartReady || lines.length === 0) {
+      setOrganizersRequisites([]);
+      return;
+    }
+    const ids = [...new Set(lines.map((l) => l.purchaseId))].join(",");
+    let cancelled = false;
+    setRequisitesLoading(true);
+    void (async () => {
+      try {
+        const { data } = await api.get<{ organizers: OrganizerRequisites[] }>(
+          `/purchases/checkout-requisites?ids=${encodeURIComponent(ids)}`
+        );
+        if (!cancelled) {
+          setOrganizersRequisites(data.organizers ?? []);
+        }
+      } catch {
+        if (!cancelled) {
+          setOrganizersRequisites([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setRequisitesLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [cartReady, checkoutCartKey, lines]);
 
   const subtotal = lines.reduce((s, l) => s + lineSubtotal(l), 0);
   const deliveryNote =
@@ -484,6 +524,42 @@ export default function CheckoutView() {
                   <span className={styles.payTag}>СБП</span>
                 </label>
               </div>
+            </section>
+
+            <section className={styles.section} aria-labelledby="checkout-requisites">
+              <h2 id="checkout-requisites" className={styles.sectionHead}>
+                <span className={`material-symbols-outlined ${styles.icon}`}>account_balance</span>
+                Реквизиты для оплаты организатору
+              </h2>
+              <p className={styles.hint} style={{ marginTop: 0, marginBottom: 12 }}>
+                Переведите сумму заказа организатору сделки по указанным реквизитам перед или после оформления.
+              </p>
+              {requisitesLoading ? (
+                <p className={styles.hint}>Загрузка реквизитов…</p>
+              ) : organizersRequisites.length === 0 ? (
+                <p className={styles.hint}>Нет данных об организаторах для позиций в корзине.</p>
+              ) : (
+                organizersRequisites.map((org) => (
+                  <div key={org.organizer_id} className={styles.requisitesCard}>
+                    <p className={styles.requisitesOrg}>Организатор: {org.organizer_name}</p>
+                    {org.purchases.length > 0 ? (
+                      <p className={styles.requisitesDeals}>
+                        {org.purchases.length === 1
+                          ? `Сделка: ${org.purchases[0].title}`
+                          : `Сделки: ${org.purchases.map((p) => p.title).join(", ")}`}
+                      </p>
+                    ) : null}
+                    {org.payment_details.trim() ? (
+                      <p className={styles.requisitesText}>{org.payment_details}</p>
+                    ) : (
+                      <p className={styles.requisitesEmpty}>
+                        Организатор ещё не указал реквизиты в настройках. Уточните способ оплаты у организатора
+                        сделки.
+                      </p>
+                    )}
+                  </div>
+                ))
+              )}
             </section>
           </div>
 

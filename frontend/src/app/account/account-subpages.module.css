@@ -395,6 +395,33 @@
   color: #0b1c30;
 }
 
+.paymentDetailsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 42rem;
+}
+
+.paymentDetailsInput {
+  font: inherit;
+  font-weight: 500;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0b1c30;
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.paymentDetailsHint {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
 .passwordForm {
   display: flex;
   flex-direction: column;

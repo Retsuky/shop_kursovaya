@@ -52,6 +52,10 @@ function mapPurchase(row) {
     created_at: row.created_at,
     updated_at: row.updated_at,
     organizer_name: row.organizer_name,
+    organizer_payment_details:
+      row.organizer_payment_details !== undefined && row.organizer_payment_details !== null
+        ? String(row.organizer_payment_details).trim()
+        : undefined,
     participant_count: row.participant_count != null ? Number(row.participant_count) : undefined,
     total_quantity:
       row.total_quantity != null ? Number(row.total_quantity) : undefined,
@@ -148,6 +152,7 @@ router.get("/catalog", optionalAuth, async (req, res) => {
         SELECT
           p.*,
           u.name AS organizer_name,
+          COALESCE(u.payment_details, '') AS organizer_payment_details,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
           (SELECT COALESCE(ROUND(AVG(pr.rating)::numeric, 1), 0)::numeric FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_avg,
@@ -194,6 +199,7 @@ router.get("/", async (req, res) => {
         SELECT
           p.*,
           u.name AS organizer_name,
+          COALESCE(u.payment_details, '') AS organizer_payment_details,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
           (SELECT COALESCE(ROUND(AVG(pr.rating)::numeric, 1), 0)::numeric FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_avg,
@@ -223,6 +229,7 @@ router.get("/mine", requireAuth, async (req, res) => {
         SELECT
           p.*,
           u.name AS organizer_name,
+          COALESCE(u.payment_details, '') AS organizer_payment_details,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
           ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
@@ -329,6 +336,65 @@ function parsePurchaseBody(body) {
   };
 }
 
+/** Реквизиты организаторов для оформления заказа (по id закупок в корзине). */
+router.get("/checkout-requisites", optionalAuth, async (req, res) => {
+  const raw = typeof req.query.ids === "string" ? req.query.ids : "";
+  const ids = [...new Set(
+    raw
+      .split(",")
+      .map((s) => Number(String(s).trim()))
+      .filter((n) => Number.isInteger(n) && n > 0)
+  )];
+
+  if (!ids.length) {
+    return res.status(400).json({ message: "Укажите ids — id закупок через запятую." });
+  }
+  if (ids.length > 48) {
+    return res.status(400).json({ message: "Слишком много закупок в одном запросе." });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+        SELECT
+          p.id AS purchase_id,
+          p.title AS purchase_title,
+          p.organizer_id,
+          u.name AS organizer_name,
+          COALESCE(u.payment_details, '') AS payment_details
+        FROM purchases p
+        INNER JOIN users u ON u.id = p.organizer_id
+        WHERE p.id = ANY($1::int[])
+          AND p.status NOT IN ('cancelled', 'pending_review', 'rejected')
+        ORDER BY p.organizer_id, p.id
+      `,
+      [ids]
+    );
+
+    const byOrganizer = new Map();
+    for (const row of result.rows) {
+      const key = row.organizer_id;
+      if (!byOrganizer.has(key)) {
+        byOrganizer.set(key, {
+          organizer_id: row.organizer_id,
+          organizer_name: row.organizer_name,
+          payment_details: String(row.payment_details ?? "").trim(),
+          purchases: [],
+        });
+      }
+      byOrganizer.get(key).purchases.push({
+        id: row.purchase_id,
+        title: row.purchase_title,
+      });
+    }
+
+    return res.status(200).json({ organizers: [...byOrganizer.values()] });
+  } catch (error) {
+    console.error("Checkout requisites:", error);
+    return res.status(500).json({ message: "Не удалось загрузить реквизиты." });
+  }
+});
+
 router.get("/:id", optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
 
@@ -342,6 +408,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
         SELECT
           p.*,
           u.name AS organizer_name,
+          COALESCE(u.payment_details, '') AS organizer_payment_details,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
           (SELECT COALESCE(ROUND(AVG(pr.rating)::numeric, 1), 0)::numeric FROM purchase_reviews pr WHERE pr.purchase_id = p.id) AS rating_avg,
@@ -784,6 +851,7 @@ router.post("/:id/join", requireAuth, async (req, res) => {
         SELECT
           p.*,
           u.name AS organizer_name,
+          COALESCE(u.payment_details, '') AS organizer_payment_details,
           (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
           (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
           px.quantity AS my_quantity

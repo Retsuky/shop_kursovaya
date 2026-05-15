@@ -17,6 +17,7 @@ function mapPublicUser(row) {
     created_at: row.created_at,
     is_admin: Boolean(row.is_admin),
     avatar_url: row.avatar_url != null ? String(row.avatar_url).trim() : "",
+    payment_details: row.payment_details != null ? String(row.payment_details) : "",
   };
 }
 
@@ -60,7 +61,7 @@ router.post("/register", async (req, res) => {
       `
         INSERT INTO users (name, email, password_hash)
         VALUES ($1, $2, $3)
-        RETURNING id, name, email, created_at, is_admin, avatar_url
+        RETURNING id, name, email, created_at, is_admin, avatar_url, payment_details
       `,
       [name.trim(), normalizedEmail, passwordHash]
     );
@@ -95,7 +96,7 @@ router.post("/login", async (req, res) => {
 
     const result = await pool.query(
       `
-        SELECT id, name, email, password_hash, created_at, is_admin, avatar_url
+        SELECT id, name, email, password_hash, created_at, is_admin, avatar_url, payment_details
         FROM users
         WHERE email = $1
       `,
@@ -137,7 +138,7 @@ router.get("/me", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
       `
-        SELECT id, name, email, created_at, is_admin, avatar_url
+        SELECT id, name, email, created_at, is_admin, avatar_url, payment_details
         FROM users
         WHERE id = $1
       `,
@@ -155,30 +156,48 @@ router.get("/me", requireAuth, async (req, res) => {
 });
 
 router.patch("/profile", requireAuth, async (req, res) => {
-  const rawIn = req.body?.avatar_url;
-  if (rawIn === undefined) {
-    return res.status(400).json({ message: "Укажите avatar_url (пустую строку, чтобы убрать фото)." });
+  const avatarIn = req.body?.avatar_url;
+  const paymentIn = req.body?.payment_details;
+
+  if (avatarIn === undefined && paymentIn === undefined) {
+    return res.status(400).json({
+      message: "Укажите avatar_url и/или payment_details для обновления.",
+    });
   }
 
-  const raw = rawIn === null || String(rawIn).trim() === "" ? "" : String(rawIn).trim();
+  const sets = [];
+  const values = [];
 
-  if (raw.length > 2048) {
-    return res.status(400).json({ message: "Слишком длинная ссылка на изображение." });
+  if (avatarIn !== undefined) {
+    const raw = avatarIn === null || String(avatarIn).trim() === "" ? "" : String(avatarIn).trim();
+    if (raw.length > 2048) {
+      return res.status(400).json({ message: "Слишком длинная ссылка на изображение." });
+    }
+    if (raw !== "" && !/^https?:\/\//i.test(raw)) {
+      return res.status(400).json({ message: "Разрешены только адреса с http или https." });
+    }
+    if (raw !== "" && !/\/uploads\//i.test(raw)) {
+      return res.status(400).json({ message: "Аватаром может быть только загруженное на сервер изображение." });
+    }
+    values.push(raw);
+    sets.push(`avatar_url = $${values.length}`);
   }
 
-  if (raw !== "" && !/^https?:\/\//i.test(raw)) {
-    return res.status(400).json({ message: "Разрешены только адреса с http или https." });
-  }
-
-  if (raw !== "" && !/\/uploads\//i.test(raw)) {
-    return res.status(400).json({ message: "Аватаром может быть только загруженное на сервер изображение." });
+  if (paymentIn !== undefined) {
+    const details = paymentIn === null ? "" : String(paymentIn);
+    if (details.length > 4000) {
+      return res.status(400).json({ message: "Реквизиты слишком длинные (максимум 4000 символов)." });
+    }
+    values.push(details);
+    sets.push(`payment_details = $${values.length}`);
   }
 
   try {
-    await pool.query("UPDATE users SET avatar_url = $1 WHERE id = $2", [raw, req.user.id]);
+    values.push(req.user.id);
+    await pool.query(`UPDATE users SET ${sets.join(", ")} WHERE id = $${values.length}`, values);
     const result = await pool.query(
       `
-        SELECT id, name, email, created_at, is_admin, avatar_url
+        SELECT id, name, email, created_at, is_admin, avatar_url, payment_details
         FROM users
         WHERE id = $1
       `,
@@ -187,7 +206,7 @@ router.patch("/profile", requireAuth, async (req, res) => {
     return res.status(200).json({ user: mapPublicUser(result.rows[0]) });
   } catch (error) {
     console.error("Patch profile:", error);
-    return res.status(500).json({ message: "Не удалось сохранить аватар." });
+    return res.status(500).json({ message: "Не удалось сохранить профиль." });
   }
 });
 

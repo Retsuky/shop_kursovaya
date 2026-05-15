@@ -32,6 +32,11 @@ export default function AccountSettingsView() {
   const [avatarError, setAvatarError] = useState("");
   const [avatarOk, setAvatarOk] = useState("");
 
+  const [paymentDetails, setPaymentDetails] = useState("");
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentOk, setPaymentOk] = useState("");
+
   useEffect(() => {
     const s = getAuthSession();
     if (!s) {
@@ -75,6 +80,12 @@ export default function AccountSettingsView() {
       cancelled = true;
     };
   }, [session?.token]);
+
+  useEffect(() => {
+    if (session?.user.payment_details != null) {
+      setPaymentDetails(session.user.payment_details);
+    }
+  }, [session?.user.payment_details]);
 
   async function patchAvatarUrl(url: string): Promise<boolean> {
     setAvatarError("");
@@ -135,6 +146,36 @@ export default function AccountSettingsView() {
       return;
     }
     await patchAvatarUrl("");
+  }
+
+  async function handlePaymentDetailsSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPaymentError("");
+    setPaymentOk("");
+    setPaymentBusy(true);
+    try {
+      const { data } = await api.patch<{ user: AuthUser }>("/auth/profile", {
+        payment_details: paymentDetails,
+      });
+      const token = session?.token ?? getAuthSession()?.token ?? "";
+      if (!token || !data?.user) {
+        throw new Error("Сессия устарела. Выйдите и войдите снова.");
+      }
+      saveAuthSession({ token, user: data.user });
+      setSession(getAuthSession());
+      setPaymentOk("Реквизиты сохранены.");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.message;
+        setPaymentError(typeof msg === "string" ? msg : "Не удалось сохранить реквизиты.");
+      } else if (err instanceof Error) {
+        setPaymentError(err.message);
+      } else {
+        setPaymentError("Ошибка сети.");
+      }
+    } finally {
+      setPaymentBusy(false);
+    }
   }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -253,6 +294,41 @@ export default function AccountSettingsView() {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className={`${sub.settingsSection} ${sub.passwordSection}`}>
+          <h2 className={sub.settingsSectionTitle}>Реквизиты для оплаты</h2>
+          <p className={sub.paymentDetailsHint}>
+            Если вы организатор сделок, укажите, куда участники должны переводить оплату (банк, карта, СБП,
+            получатель). Эти данные увидят покупатели при оформлении заказа по вашим закупкам.
+          </p>
+          <form className={sub.paymentDetailsForm} onSubmit={(e) => void handlePaymentDetailsSubmit(e)}>
+            <label className={sub.pwdField}>
+              Реквизиты
+              <textarea
+                className={sub.paymentDetailsInput}
+                value={paymentDetails}
+                onChange={(e) => setPaymentDetails(e.target.value)}
+                placeholder={
+                  "Например:\nСбербанк, карта 4276 …\nПолучатель: Иван Иванов\nСБП: +7 …"
+                }
+                maxLength={4000}
+              />
+            </label>
+            {paymentError ? (
+              <p className={sub.pwdError} role="alert">
+                {paymentError}
+              </p>
+            ) : null}
+            {paymentOk ? (
+              <p className={sub.pwdOk} role="status">
+                {paymentOk}
+              </p>
+            ) : null}
+            <button type="submit" className={sub.pwdSubmit} disabled={paymentBusy}>
+              {paymentBusy ? "Сохранение…" : "Сохранить реквизиты"}
+            </button>
+          </form>
         </div>
 
         <div className={`${sub.settingsSection} ${sub.passwordSection}`}>

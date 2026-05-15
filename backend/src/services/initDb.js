@@ -20,6 +20,10 @@ async function initDb() {
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT NOT NULL DEFAULT ''`
   );
 
+  await pool.query(
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_details TEXT NOT NULL DEFAULT ''`
+  );
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS purchases (
       id SERIAL PRIMARY KEY,

@@ -7,6 +7,8 @@ export type AuthUser = {
   is_admin?: boolean;
   /** URL загруженного фото или пусто — тогда плейсхолдер с инициалом */
   avatar_url?: string;
+  /** Реквизиты для оплаты участниками сделок организатора */
+  payment_details?: string;
 };
 
 export type AuthSession = {

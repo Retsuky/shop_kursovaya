@@ -62,6 +62,8 @@ export type Purchase = {
   created_at: string;
   updated_at: string;
   organizer_name?: string;
+  /** Реквизиты организатора (только при детальном просмотре / оформлении) */
+  organizer_payment_details?: string;
   participant_count?: number;
   total_quantity?: number;
   my_quantity?: number;

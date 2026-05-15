@@ -572,6 +572,47 @@
   color: var(--cb-on-surface);
 }
 
+.requisitesCard {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 104, 95, 0.2);
+  background: rgba(137, 245, 231, 0.12);
+}
+
+.requisitesCard + .requisitesCard {
+  margin-top: 12px;
+}
+
+.requisitesOrg {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--cb-on-surface);
+}
+
+.requisitesDeals {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  color: var(--cb-on-surface-variant);
+}
+
+.requisitesText {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--cb-on-surface);
+  font-family: inherit;
+}
+
+.requisitesEmpty {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #92400e;
+}
+
 .savingsBanner {
   display: flex;
   align-items: center;
