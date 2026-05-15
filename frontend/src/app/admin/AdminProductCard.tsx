@@ -19,20 +19,6 @@ import extra from "./admin-product-card.module.css";
 
 const ALL_STATUSES: PurchaseStatus[] = [...STATUS_ORDER];
 
-function catalogOpenHint(purchase: Purchase): string | null {
-  if (purchase.status === "cancelled") {
-    return "Отменённые сделки в каталог не попадают.";
-  }
-  const deadlineOk = new Date(purchase.deadline).getTime() > Date.now();
-  if (purchase.status === "collecting" && deadlineOk) {
-    return null;
-  }
-  if (purchase.status === "collecting" && !deadlineOk) {
-    return "Срок сбора уже прошёл — в разделе «Открытые» карточка не показывается. Продлите дату в редактировании или в каталоге включите «Все».";
-  }
-  return "В «Открытых» на витрине только статус «Сбор заявок». Сейчас выбран другой этап — карточка видна в каталоге при фильтре «Все» или «Выкуплено».";
-}
-
 type Props = {
   purchase: Purchase;
   onStatusChange: (id: number, status: PurchaseStatus) => void;
@@ -71,7 +57,6 @@ export default function AdminProductCard({
   const avatarSlots = preview.slice(0, 3);
   const participants = purchase.participant_count ?? 0;
   const extraAv = Math.max(0, participants - avatarSlots.length);
-  const hint = catalogOpenHint(purchase);
 
   return (
     <article
@@ -169,12 +154,6 @@ export default function AdminProductCard({
               </option>
             ))}
           </select>
-          {hint ? (
-            <p className={extra.catalogHint}>
-              {hint}{" "}
-              <Link href="/catalog?deal=all">Открыть каталог «Все»</Link>.
-            </p>
-          ) : null}
           <Link href={`/purchases/${purchase.id}`} className={`${cardStyles.cta} ${cardStyles.ctaMuted}`}>
             Как на сайте
           </Link>
