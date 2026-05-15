@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -85,7 +86,9 @@ export default function AdminPanel() {
 
   const loadPurchases = useCallback(async () => {
     const { data } = await api.get<Purchase[]>("/admin/purchases");
-    setPurchases(data);
+    setPurchases(
+      data.filter((p) => p.status !== "pending_review" && p.status !== "rejected")
+    );
   }, []);
 
   const loadUsers = useCallback(async () => {
@@ -125,7 +128,7 @@ export default function AdminPanel() {
     setError("");
     try {
       await api.patch<Purchase>(`/admin/purchases/${id}`, { status });
-      await loadPurchases();
+      await Promise.all([loadPurchases(), loadSubmissions()]);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message ?? "Не удалось сменить статус.");
@@ -140,7 +143,7 @@ export default function AdminPanel() {
     setError("");
     try {
       await api.delete(`/admin/purchases/${id}`);
-      await loadPurchases();
+      await Promise.all([loadPurchases(), loadSubmissions()]);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message ?? "Не удалось удалить.");
@@ -376,21 +379,46 @@ export default function AdminPanel() {
               <p className={styles.muted}>Нет заявок на рассмотрении.</p>
             ) : (
               <div className={styles.cardGrid}>
-                {submissions.map((p) => (
-                  <article key={p.id} className={styles.submissionCard}>
-                    <div className={styles.submissionCardHead}>
-                      <h3 className={styles.submissionTitle}>{p.title}</h3>
-                      <span className={styles.adminPill}>На рассмотрении</span>
-                    </div>
-                    <p className={styles.muted}>
-                      {p.organizer_name ?? "—"} · {formatRub(p.unit_price)} · мин. {p.min_participants} уч.
-                    </p>
-                    <p className={styles.muted}>{p.product_name}</p>
-                    <Link href={`/admin/${p.id}/edit`} className={styles.btnPrimary}>
-                      Редактировать и решить
-                    </Link>
-                  </article>
-                ))}
+                {submissions.map((p) => {
+                  const imageUrl = p.image_url?.trim() ?? "";
+                  return (
+                    <article key={p.id} className={styles.submissionCard}>
+                      <div className={styles.submissionCardImageWrap}>
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt=""
+                            width={400}
+                            height={200}
+                            className={styles.submissionCardImage}
+                            unoptimized
+                          />
+                        ) : (
+                          <div
+                            className={`${styles.submissionCardImage} ${styles.submissionCardImagePlaceholder}`}
+                            aria-hidden
+                          >
+                            <span className="material-symbols-outlined">image</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.submissionCardBody}>
+                        <div className={styles.submissionCardHead}>
+                          <h3 className={styles.submissionTitle}>{p.title}</h3>
+                          <span className={styles.adminPill}>На рассмотрении</span>
+                        </div>
+                        <p className={styles.muted}>
+                          {p.organizer_name ?? "—"} · {formatRub(p.unit_price)} · мин.{" "}
+                          {p.min_participants} уч.
+                        </p>
+                        <p className={styles.muted}>{p.product_name}</p>
+                        <Link href={`/admin/${p.id}/edit`} className={styles.btnPrimary}>
+                          Редактировать и решить
+                        </Link>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </>

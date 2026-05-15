@@ -185,7 +185,11 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
       image_url: form.image_url.trim(),
       retail_price:
         form.retail_price.trim() === "" ? null : Number(String(form.retail_price).replace(",", ".")),
-      status: mode === "new" ? ("collecting" as PurchaseStatus) : form.status,
+      ...(mode === "new"
+        ? { status: "collecting" as PurchaseStatus }
+        : form.status === "pending_review"
+          ? {}
+          : { status: form.status }),
     };
   }
 
@@ -318,20 +322,25 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                   ))}
                 </select>
               </label>
-              {mode === "edit" ? (
+              {mode === "edit" && !isReviewSubmission ? (
                 <label className={styles.field}>
                   Статус заказа
                   <select
                     value={form.status}
                     onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as PurchaseStatus }))}
                   >
-                    {ALL_STATUSES.map((s) => (
+                    {ALL_STATUSES.filter((s) => s !== "pending_review" && s !== "rejected").map((s) => (
                       <option key={s} value={s}>
                         {STATUS_LABELS[s]}
                       </option>
                     ))}
                   </select>
                 </label>
+              ) : mode === "edit" && isReviewSubmission ? (
+                <div className={styles.field}>
+                  <span>Статус</span>
+                  <p className={styles.formNote}>{STATUS_LABELS.pending_review}</p>
+                </div>
               ) : (
                 <div className={`${styles.field} ${styles.fieldFull}`}>
                   <span>Статус</span>
@@ -506,7 +515,7 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                     </button>
                     <button
                       type="button"
-                      className={styles.btnDanger}
+                      className={styles.btnReject}
                       disabled={saving}
                       onClick={() => void handleReject()}
                     >

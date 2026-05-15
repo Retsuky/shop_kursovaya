@@ -24,6 +24,8 @@ const PURCHASE_STATUSES = new Set([
   "pending_review",
   "rejected",
 ]);
+/** Не показывать в админ-вкладке «Каталог» до одобрения заявки */
+const ADMIN_CATALOG_HIDDEN_STATUSES = ["pending_review", "rejected"];
 const PARTICIPANT_STATUSES = new Set(["assembly", "processing", "delivery", "handed"]);
 function normalizeParticipantStatus(raw) {
   const s = String(raw ?? "").trim();
@@ -171,6 +173,7 @@ router.get("/purchases", async (req, res) => {
           ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
         FROM purchases p
         INNER JOIN users u ON u.id = p.organizer_id
+        WHERE p.status NOT IN ('${ADMIN_CATALOG_HIDDEN_STATUSES.join("','")}')
         ORDER BY p.created_at DESC
       `
     );
@@ -468,6 +471,19 @@ router.patch("/purchases/:id", async (req, res) => {
     }
 
     const prevStatus = exists.rows[0].status;
+
+    if (body.status !== undefined) {
+      const nextStatus = String(body.status).trim();
+      if (
+        prevStatus === "pending_review" &&
+        nextStatus !== "pending_review" &&
+        nextStatus !== "rejected"
+      ) {
+        return res.status(400).json({
+          message: "Заявку нельзя опубликовать через смену статуса. Используйте «Одобрить и опубликовать».",
+        });
+      }
+    }
 
     values.push(id);
     const idPlaceholder = values.length;
