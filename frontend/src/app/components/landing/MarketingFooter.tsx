@@ -8,7 +8,7 @@ export default function MarketingFooter() {
         <div className={styles.brandBlock}>
           <div className={styles.brand}>CoBuy</div>
           <p className={styles.copy}>
-            © {new Date().getFullYear()} CoBuy. Расширяем возможности сообществ через коллективную ценность.
+            © {new Date().getFullYear()} CoBuy. Расширяем возможности сообществ через коллективную ценность, Автор Эм В.А. ИКБО-11-23.
           </p>
         </div>
       </div>
