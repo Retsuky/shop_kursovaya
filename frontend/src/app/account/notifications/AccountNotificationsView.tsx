@@ -59,6 +59,9 @@ function iconForType(type: string, title: string): string {
   if (type === "group_discount_ready") {
     return "groups";
   }
+  if (type === "submission_review") {
+    return title.includes("отклон") || title.includes("Отклон") ? "block" : "check_circle";
+  }
   return "campaign";
 }
 

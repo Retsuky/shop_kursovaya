@@ -3,9 +3,11 @@ export type PurchaseStatus =
   | "collecting"
   | "closed"
   | "completed"
-  | "cancelled";
+  | "cancelled"
+  | "pending_review"
+  | "rejected";
 
-export const STATUS_ORDER: Exclude<PurchaseStatus, "cancelled">[] = [
+export const STATUS_ORDER: Exclude<PurchaseStatus, "cancelled" | "pending_review" | "rejected">[] = [
   "collecting",
   "closed",
   "completed",
@@ -16,7 +18,16 @@ export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   closed: "Набор закрыт",
   completed: "Завершена",
   cancelled: "Отменена",
+  pending_review: "На рассмотрении",
+  rejected: "Отклонена",
 };
+
+/** Статусы, видимые в публичном каталоге */
+export const CATALOG_VISIBLE_STATUSES = new Set<PurchaseStatus>([
+  "collecting",
+  "closed",
+  "completed",
+]);
 
 export function getNextStatus(current: string): PurchaseStatus | null {
   const i = STATUS_ORDER.indexOf(current as (typeof STATUS_ORDER)[number]);

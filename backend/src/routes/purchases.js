@@ -15,7 +15,15 @@ const {
 } = require("../lib/participantPreview");
 const { promoteAssemblyToProcessingAfterClose } = require("../lib/participantOrderFlow");
 
-const PURCHASE_STATUSES = new Set(["collecting", "closed", "completed", "cancelled"]);
+const PURCHASE_STATUSES = new Set([
+  "collecting",
+  "closed",
+  "completed",
+  "cancelled",
+  "pending_review",
+  "rejected",
+]);
+const CATALOG_HIDDEN_STATUSES = ["cancelled", "pending_review", "rejected"];
 const PARTICIPANT_STATUSES = new Set(["processing","assembly", "delivery", "handed"]);
 const DELIVERY_METHODS = new Set(["pickup", "courier"]);
 const PAYMENT_METHODS = new Set(["card", "sbp"]);
@@ -89,7 +97,7 @@ router.get("/catalog", optionalAuth, async (req, res) => {
       : [];
 
   const params = [];
-  const where = ["p.status <> 'cancelled'"];
+  const where = [`p.status NOT IN ('${CATALOG_HIDDEN_STATUSES.join("','")}')`];
 
   if (Number.isFinite(maxPrice)) {
     params.push(maxPrice);
@@ -260,7 +268,68 @@ router.get("/mine", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+function parsePurchaseBody(body) {
+  const {
+    title,
+    description,
+    product_name,
+    unit_price,
+    min_participants,
+    deadline,
+    city,
+    pickup_address,
+    category,
+    image_url,
+    retail_price,
+  } = body;
+
+  if (!title || !product_name || unit_price == null || min_participants == null || !deadline) {
+    return {
+      error: "Обязательны поля: title, product_name, unit_price, min_participants, deadline.",
+    };
+  }
+
+  const priceNum = Number(unit_price);
+  if (!Number.isFinite(priceNum) || priceNum < 0) {
+    return { error: "Некорректная цена за единицу." };
+  }
+
+  const minP = Number(min_participants);
+  if (!Number.isInteger(minP) || minP < 1) {
+    return { error: "Минимум участников должен быть целым числом ≥ 1." };
+  }
+
+  const deadlineDate = new Date(deadline);
+  if (Number.isNaN(deadlineDate.getTime())) {
+    return { error: "Некорректная дата сбора." };
+  }
+
+  let retailNum = null;
+  if (retail_price != null && String(retail_price).trim() !== "") {
+    retailNum = Number(retail_price);
+    if (!Number.isFinite(retailNum) || retailNum < 0) {
+      return { error: "Некорректная розничная цена." };
+    }
+  }
+
+  return {
+    values: {
+      title: String(title).trim(),
+      description: description != null ? String(description).trim() : "",
+      product_name: String(product_name).trim(),
+      unit_price: priceNum,
+      min_participants: minP,
+      deadline: deadlineDate,
+      city: city != null ? String(city).trim() : "",
+      pickup_address: pickup_address != null ? String(pickup_address).trim() : "",
+      category: category != null ? String(category).trim() : "",
+      image_url: image_url != null ? String(image_url).trim() : "",
+      retail_price: retailNum,
+    },
+  };
+}
+
+router.get("/:id", optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
 
   if (!Number.isInteger(id)) {
@@ -289,6 +358,18 @@ router.get("/:id", async (req, res) => {
 
     if (!row) {
       return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    if (row.status === "pending_review" || row.status === "rejected") {
+      const viewerId = req.user?.id;
+      let viewerIsAdmin = false;
+      if (viewerId) {
+        const adminRow = await pool.query("SELECT is_admin FROM users WHERE id = $1", [viewerId]);
+        viewerIsAdmin = adminRow.rows[0]?.is_admin === true;
+      }
+      if (row.organizer_id !== viewerId && !viewerIsAdmin) {
+        return res.status(404).json({ message: "Закупка не найдена." });
+      }
     }
 
     const participantsResult = await pool.query(
@@ -342,61 +423,78 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", requireAuth, async (req, res) => {
-  const {
-    title,
-    description,
-    product_name,
-    unit_price,
-    min_participants,
-    deadline,
-    city,
-    pickup_address,
-    category,
-    image_url,
-    retail_price,
-  } = req.body;
-
-  if (
-    !title ||
-    !product_name ||
-    unit_price == null ||
-    min_participants == null ||
-    !deadline
-  ) {
-    return res.status(400).json({
-      message: "Обязательны поля: title, product_name, unit_price, min_participants, deadline.",
-    });
+router.post("/submit", requireAuth, async (req, res) => {
+  const parsed = parsePurchaseBody(req.body);
+  if (parsed.error) {
+    return res.status(400).json({ message: parsed.error });
   }
+  const v = parsed.values;
 
-  const priceNum = Number(unit_price);
+  try {
+    const result = await pool.query(
+      `
+        INSERT INTO purchases (
+          organizer_id, title, description, product_name, unit_price,
+          min_participants, deadline, city, pickup_address, status,
+          category, image_url, retail_price
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending_review', $10, $11, $12)
+        RETURNING *
+      `,
+      [
+        req.user.id,
+        v.title,
+        v.description,
+        v.product_name,
+        v.unit_price,
+        v.min_participants,
+        v.deadline,
+        v.city,
+        v.pickup_address,
+        v.category,
+        v.image_url,
+        v.retail_price,
+      ]
+    );
 
-  if (!Number.isFinite(priceNum) || priceNum < 0) {
-    return res.status(400).json({ message: "Некорректная цена за единицу." });
-  }
+    const created = result.rows[0];
+    const u = await pool.query("SELECT name FROM users WHERE id = $1", [req.user.id]);
 
-  const minP = Number(min_participants);
-
-  if (!Number.isInteger(minP) || minP < 1) {
-    return res.status(400).json({ message: "Минимум участников должен быть целым числом ≥ 1." });
-  }
-
-  const deadlineDate = new Date(deadline);
-
-  if (Number.isNaN(deadlineDate.getTime())) {
-    return res.status(400).json({ message: "Некорректная дата сбора." });
-  }
-
-  let retailNum = null;
-  if (retail_price != null && String(retail_price).trim() !== "") {
-    retailNum = Number(retail_price);
-    if (!Number.isFinite(retailNum) || retailNum < 0) {
-      return res.status(400).json({ message: "Некорректная розничная цена." });
+    try {
+      const admins = await pool.query(`SELECT id FROM users WHERE is_admin = TRUE`);
+      for (const a of admins.rows) {
+        await createNotification(pool, {
+          userId: a.id,
+          purchaseId: created.id,
+          type: "submission_new",
+          title: "Новая заявка на сделку",
+          body: `«${v.title}» — пользователь ${u.rows[0]?.name ?? "участник"} оставил заявку на рассмотрение.`,
+        });
+      }
+    } catch (notifyErr) {
+      console.error("Notify admins submission:", notifyErr);
     }
-  }
 
-  const categoryStr = category != null ? String(category).trim() : "";
-  const imageStr = image_url != null ? String(image_url).trim() : "";
+    return res.status(201).json(
+      mapPurchase({
+        ...created,
+        organizer_name: u.rows[0]?.name,
+        participant_count: 0,
+        total_quantity: 0,
+      })
+    );
+  } catch (error) {
+    console.error("Submit purchase:", error);
+    return res.status(500).json({ message: "Не удалось отправить заявку." });
+  }
+});
+
+router.post("/", requireAuth, async (req, res) => {
+  const parsed = parsePurchaseBody(req.body);
+  if (parsed.error) {
+    return res.status(400).json({ message: parsed.error });
+  }
+  const v = parsed.values;
 
   try {
     const result = await pool.query(
@@ -411,17 +509,17 @@ router.post("/", requireAuth, async (req, res) => {
       `,
       [
         req.user.id,
-        String(title).trim(),
-        description != null ? String(description).trim() : "",
-        String(product_name).trim(),
-        priceNum,
-        minP,
-        deadlineDate,
-        city != null ? String(city).trim() : "",
-        pickup_address != null ? String(pickup_address).trim() : "",
-        categoryStr,
-        imageStr,
-        retailNum,
+        v.title,
+        v.description,
+        v.product_name,
+        v.unit_price,
+        v.min_participants,
+        v.deadline,
+        v.city,
+        v.pickup_address,
+        v.category,
+        v.image_url,
+        v.retail_price,
       ]
     );
 
@@ -598,6 +696,10 @@ router.post("/:id/join", requireAuth, async (req, res) => {
 
     if (!purchase) {
       return res.status(404).json({ message: "Закупка не найдена." });
+    }
+
+    if (purchase.status === "pending_review" || purchase.status === "rejected") {
+      return res.status(400).json({ message: "Сделка ещё не опубликована в каталоге." });
     }
 
     if (purchase.status !== "collecting") {

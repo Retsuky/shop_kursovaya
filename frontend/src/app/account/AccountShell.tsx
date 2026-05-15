@@ -18,11 +18,14 @@ type MinePayload = {
   joined: (Purchase & { my_quantity?: number })[];
 };
 
-type NavKey = "profile" | "orders" | "notifications" | "settings";
+type NavKey = "profile" | "orders" | "add-deal" | "notifications" | "settings";
 
 function navKeyFromPath(path: string): NavKey {
   if (path.startsWith("/account/orders")) {
     return "orders";
+  }
+  if (path.startsWith("/account/add-deal")) {
+    return "add-deal";
   }
   if (path.startsWith("/account/notifications")) {
     return "notifications";
@@ -146,6 +149,10 @@ export default function AccountShell({ children }: Props) {
                 <Link href="/account/orders" className={linkClass("orders")}>
                   <span className={`material-symbols-outlined ${styles.sideIcon}`}>inventory_2</span>
                   Мои заказы
+                </Link>
+                <Link href="/account/add-deal" className={linkClass("add-deal")}>
+                  <span className={`material-symbols-outlined ${styles.sideIcon}`}>add_circle</span>
+                  Добавить сделку
                 </Link>
                 <Link href="/account/notifications" className={linkClass("notifications")}>
                   <span className={`material-symbols-outlined ${styles.sideIcon}`}>notifications_active</span>

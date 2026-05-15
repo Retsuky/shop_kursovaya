@@ -51,8 +51,9 @@ type AdminPurchaseDetail = {
 export default function AdminPanel() {
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
-  const [tab, setTab] = useState<"deals" | "users">("deals");
+  const [tab, setTab] = useState<"deals" | "submissions" | "users">("deals");
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [submissions, setSubmissions] = useState<Purchase[]>([]);
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -92,11 +93,16 @@ export default function AdminPanel() {
     setUsers(data);
   }, []);
 
+  const loadSubmissions = useCallback(async () => {
+    const { data } = await api.get<Purchase[]>("/admin/submissions");
+    setSubmissions(data);
+  }, []);
+
   const refresh = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
-      await Promise.all([loadPurchases(), loadUsers()]);
+      await Promise.all([loadPurchases(), loadSubmissions(), loadUsers()]);
     } catch (e) {
       if (axios.isAxiosError(e)) {
         setError(e.response?.data?.message ?? "Не удалось загрузить данные.");
@@ -106,7 +112,7 @@ export default function AdminPanel() {
     } finally {
       setLoading(false);
     }
-  }, [loadPurchases, loadUsers]);
+  }, [loadPurchases, loadSubmissions, loadUsers]);
 
   useEffect(() => {
     if (!allowed) {
@@ -298,6 +304,18 @@ export default function AdminPanel() {
           <button
             type="button"
             role="tab"
+            aria-selected={tab === "submissions"}
+            className={tab === "submissions" ? styles.tabActive : styles.tab}
+            onClick={() => setTab("submissions")}
+          >
+            Заявки на сделки
+            {submissions.length > 0 ? (
+              <span className={styles.badgeCount}>{submissions.length}</span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={tab === "users"}
             className={tab === "users" ? styles.tabActive : styles.tab}
             onClick={() => setTab("users")}
@@ -340,6 +358,38 @@ export default function AdminPanel() {
                     onDelete={(id) => void removePurchase(id)}
                     onShowParticipants={(id) => void openParticipantsModal(id)}
                   />
+                ))}
+              </div>
+            )}
+          </>
+        ) : tab === "submissions" ? (
+          <>
+            <div className={styles.toolbar}>
+              <h2 className={styles.sectionTitle}>Заявки пользователей</h2>
+              <p className={styles.muted} style={{ margin: 0, maxWidth: 520 }}>
+                После одобрения сделка появится в каталоге со статусом «Сбор заявок».
+              </p>
+            </div>
+            {loading ? (
+              <p className={styles.muted}>Загрузка…</p>
+            ) : submissions.length === 0 ? (
+              <p className={styles.muted}>Нет заявок на рассмотрении.</p>
+            ) : (
+              <div className={styles.cardGrid}>
+                {submissions.map((p) => (
+                  <article key={p.id} className={styles.submissionCard}>
+                    <div className={styles.submissionCardHead}>
+                      <h3 className={styles.submissionTitle}>{p.title}</h3>
+                      <span className={styles.adminPill}>На рассмотрении</span>
+                    </div>
+                    <p className={styles.muted}>
+                      {p.organizer_name ?? "—"} · {formatRub(p.unit_price)} · мин. {p.min_participants} уч.
+                    </p>
+                    <p className={styles.muted}>{p.product_name}</p>
+                    <Link href={`/admin/${p.id}/edit`} className={styles.btnPrimary}>
+                      Редактировать и решить
+                    </Link>
+                  </article>
                 ))}
               </div>
             )}

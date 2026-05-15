@@ -66,6 +66,16 @@
   border: 1px solid #f59e0b;
 }
 
+.badge_review {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.badge_rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .body {
   padding: 24px;
 }

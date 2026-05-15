@@ -29,7 +29,12 @@ type AdminPurchaseDetail = {
   participants: unknown[];
 };
 
-const ALL_STATUSES: PurchaseStatus[] = [...STATUS_ORDER, "cancelled"];
+const ALL_STATUSES: PurchaseStatus[] = [
+  ...STATUS_ORDER,
+  "cancelled",
+  "pending_review",
+  "rejected",
+];
 const CATALOG_CATEGORIES = [
   "Электроника",
   "Дом и уют",
@@ -165,29 +170,31 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
     };
   }, [allowed, mode, purchaseId]);
 
+  function buildPatchBody() {
+    return {
+      organizer_id: Number(form.organizer_id),
+      title: form.title.trim(),
+      description: form.description.trim(),
+      product_name: form.product_name.trim(),
+      unit_price: Number(String(form.unit_price).replace(",", ".")),
+      min_participants: Number(form.min_participants),
+      deadline: new Date(form.deadline).toISOString(),
+      city: form.city.trim(),
+      pickup_address: form.pickup_address.trim(),
+      category: form.category.trim(),
+      image_url: form.image_url.trim(),
+      retail_price:
+        form.retail_price.trim() === "" ? null : Number(String(form.retail_price).replace(",", ".")),
+      status: mode === "new" ? ("collecting" as PurchaseStatus) : form.status,
+    };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSaving(true);
     try {
-      const body = {
-        organizer_id: Number(form.organizer_id),
-        title: form.title.trim(),
-        description: form.description.trim(),
-        product_name: form.product_name.trim(),
-        unit_price: Number(String(form.unit_price).replace(",", ".")),
-        min_participants: Number(form.min_participants),
-        deadline: new Date(form.deadline).toISOString(),
-        city: form.city.trim(),
-        pickup_address: form.pickup_address.trim(),
-        category: form.category.trim(),
-        image_url: form.image_url.trim(),
-        retail_price:
-          form.retail_price.trim() === ""
-            ? null
-            : Number(String(form.retail_price).replace(",", ".")),
-        status: mode === "new" ? ("collecting" as PurchaseStatus) : form.status,
-      };
+      const body = buildPatchBody();
 
       if (mode === "edit" && purchaseId != null) {
         await api.patch<Purchase>(`/admin/purchases/${purchaseId}`, body);
@@ -207,12 +214,66 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
     }
   }
 
+  async function handleApprove() {
+    if (purchaseId == null) {
+      return;
+    }
+    if (!window.confirm("Одобрить заявку и опубликовать сделку в каталоге?")) {
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      const body = { ...buildPatchBody(), status: "pending_review" as PurchaseStatus };
+      await api.patch<Purchase>(`/admin/purchases/${purchaseId}`, body);
+      await api.post<Purchase>(`/admin/purchases/${purchaseId}/approve`);
+      router.push("/admin");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Не удалось одобрить заявку.");
+      } else {
+        setError("Ошибка сети.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleReject() {
+    if (purchaseId == null) {
+      return;
+    }
+    if (!window.confirm("Отклонить заявку? Сделка не появится в каталоге.")) {
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      const body = { ...buildPatchBody(), status: "pending_review" as PurchaseStatus };
+      await api.patch<Purchase>(`/admin/purchases/${purchaseId}`, body);
+      await api.post<Purchase>(`/admin/purchases/${purchaseId}/reject`);
+      router.push("/admin");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Не удалось отклонить заявку.");
+      } else {
+        setError("Ошибка сети.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!allowed) {
     return null;
   }
 
-  const title =
-    mode === "new" ? "Добавить товар в каталог" : `Редактировать товар #${purchaseId ?? ""}`;
+  const isReviewSubmission = mode === "edit" && form.status === "pending_review";
+  const title = isReviewSubmission
+    ? `Заявка на сделку #${purchaseId ?? ""}`
+    : mode === "new"
+      ? "Добавить товар в каталог"
+      : `Редактировать товар #${purchaseId ?? ""}`;
   const categoryKnown = CATALOG_CATEGORIES.includes(form.category);
 
   return (
@@ -223,12 +284,14 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
           <Link href="/admin">← Назад к админ-каталогу</Link>
         </p>
         <header className={styles.head}>
-          <p className={styles.badge}>{mode === "new" ? "Новая позиция" : "Редактирование"}</p>
+          <p className={styles.badge}>
+            {isReviewSubmission ? "Заявка пользователя" : mode === "new" ? "Новая позиция" : "Редактирование"}
+          </p>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.subtitle}>
-            В разделе каталога «Открытые» показываются только сделки со статусом «Сбор заявок» и с датой окончания сбора
-            в будущем. Новая позиция всегда создаётся в статусе «Сбор заявок»; этапы оплаты и завершения меняйте при
-            редактировании.
+            {isReviewSubmission
+              ? "Проверьте данные, при необходимости отредактируйте карточку и одобрите публикацию в каталоге или отклоните заявку."
+              : "В разделе каталога «Открытые» показываются только сделки со статусом «Сбор заявок» и с датой окончания сбора в будущем. Новая позиция всегда создаётся в статусе «Сбор заявок»."}
           </p>
         </header>
 
@@ -431,6 +494,26 @@ export default function AdminProductForm({ mode, purchaseId }: Props) {
                 <button type="submit" className={styles.btnPrimary} disabled={saving}>
                   {mode === "new" ? "Добавить в каталог" : "Сохранить изменения"}
                 </button>
+                {isReviewSubmission ? (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.btnPrimary}
+                      disabled={saving}
+                      onClick={() => void handleApprove()}
+                    >
+                      Одобрить и опубликовать
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnDanger}
+                      disabled={saving}
+                      onClick={() => void handleReject()}
+                    >
+                      Отклонить заявку
+                    </button>
+                  </>
+                ) : null}
                 <Link href="/admin" className={styles.btnGhost}>
                   Отмена
                 </Link>

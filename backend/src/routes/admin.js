@@ -6,6 +6,7 @@ const {
   normalizeParticipantPreview,
 } = require("../lib/participantPreview");
 const {
+  createNotification,
   notifyStatusChange,
   notifyParticipantDeliveryStatusChange,
 } = require("../services/notifications");
@@ -20,6 +21,8 @@ const PURCHASE_STATUSES = new Set([
   "closed",
   "completed",
   "cancelled",
+  "pending_review",
+  "rejected",
 ]);
 const PARTICIPANT_STATUSES = new Set(["assembly", "processing", "delivery", "handed"]);
 function normalizeParticipantStatus(raw) {
@@ -666,6 +669,111 @@ router.patch("/purchases/:id/participants/:userId", async (req, res) => {
   } catch (error) {
     console.error("Admin patch participant:", error);
     return res.status(500).json({ message: "Не удалось обновить данные участника." });
+  }
+});
+
+router.get("/submissions", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+        SELECT
+          p.*,
+          u.name AS organizer_name,
+          (SELECT COUNT(DISTINCT pp.user_id)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS participant_count,
+          (SELECT COALESCE(SUM(pp.quantity), 0)::int FROM purchase_participants pp WHERE pp.purchase_id = p.id) AS total_quantity,
+          ${PARTICIPANT_PREVIEW_SQL} AS participant_preview
+        FROM purchases p
+        INNER JOIN users u ON u.id = p.organizer_id
+        WHERE p.status = 'pending_review'
+        ORDER BY p.created_at ASC
+      `
+    );
+    return res.status(200).json(result.rows.map(mapPurchase));
+  } catch (error) {
+    console.error("Admin submissions:", error);
+    return res.status(500).json({ message: "Не удалось загрузить заявки." });
+  }
+});
+
+router.post("/purchases/:id/approve", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: "Некорректный идентификатор." });
+  }
+
+  try {
+    const cur = await pool.query("SELECT id, organizer_id, title, status FROM purchases WHERE id = $1", [id]);
+    const row = cur.rows[0];
+    if (!row) {
+      return res.status(404).json({ message: "Заявка не найдена." });
+    }
+    if (row.status !== "pending_review") {
+      return res.status(400).json({ message: "Одобрить можно только заявку на рассмотрении." });
+    }
+
+    await pool.query(
+      `UPDATE purchases SET status = 'collecting', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [id]
+    );
+
+    try {
+      await createNotification(pool, {
+        userId: row.organizer_id,
+        purchaseId: id,
+        type: "submission_review",
+        title: "Заявка одобрена",
+        body: `Сделка «${row.title}» опубликована в каталоге — сбор заявок открыт.`,
+      });
+    } catch (notifyErr) {
+      console.error("Notify submission approve:", notifyErr);
+    }
+
+    const updated = await fetchPurchaseById(id);
+    return res.status(200).json(mapPurchase(updated));
+  } catch (error) {
+    console.error("Admin approve submission:", error);
+    return res.status(500).json({ message: "Не удалось одобрить заявку." });
+  }
+});
+
+router.post("/purchases/:id/reject", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: "Некорректный идентификатор." });
+  }
+
+  try {
+    const cur = await pool.query("SELECT id, organizer_id, title, status FROM purchases WHERE id = $1", [id]);
+    const row = cur.rows[0];
+    if (!row) {
+      return res.status(404).json({ message: "Заявка не найдена." });
+    }
+    if (row.status !== "pending_review") {
+      return res.status(400).json({ message: "Отклонить можно только заявку на рассмотрении." });
+    }
+
+    await pool.query(
+      `UPDATE purchases SET status = 'rejected', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [id]
+    );
+
+    try {
+      await createNotification(pool, {
+        userId: row.organizer_id,
+        purchaseId: id,
+        type: "submission_review",
+        title: "Заявка отклонена",
+        body: `Сделка «${row.title}» не будет опубликована в каталоге. При необходимости отправьте новую заявку.`,
+      });
+    } catch (notifyErr) {
+      console.error("Notify submission reject:", notifyErr);
+    }
+
+    const updated = await fetchPurchaseById(id);
+    return res.status(200).json(mapPurchase(updated));
+  } catch (error) {
+    console.error("Admin reject submission:", error);
+    return res.status(500).json({ message: "Не удалось отклонить заявку." });
   }
 });
 

@@ -19,10 +19,16 @@ export default function AccountDealCard({ purchase, role }: Props) {
 
   const status = purchase.status;
   const collecting = status === "collecting";
+  const pendingReview = status === "pending_review";
+  const rejected = status === "rejected";
   const orderPlaced = status === "closed" || status === "completed";
 
-  let badge: { text: string; variant: "wait" | "order" | "ship" };
-  if (orderPlaced) {
+  let badge: { text: string; variant: "wait" | "order" | "ship" | "review" | "rejected" };
+  if (pendingReview) {
+    badge = { text: "НА РАССМОТРЕНИИ", variant: "review" };
+  } else if (rejected) {
+    badge = { text: "ОТКЛОНЕНА", variant: "rejected" };
+  } else if (orderPlaced) {
     badge = status === "closed" ? { text: "НАБОР ЗАКРЫТ", variant: "ship" } : { text: "ЗАВЕРШЕНА", variant: "order" };
   } else if (collecting) {
     badge = { text: "ОЖИДАНИЕ УЧАСТНИКОВ", variant: "wait" };
@@ -71,7 +77,11 @@ export default function AccountDealCard({ purchase, role }: Props) {
                 ? "check_circle"
                 : badge.variant === "ship"
                   ? "local_shipping"
-                  : "hourglass_empty"}
+                  : badge.variant === "rejected"
+                    ? "block"
+                    : badge.variant === "review"
+                      ? "pending"
+                      : "hourglass_empty"}
             </span>
             {badge.text}
           </span>
