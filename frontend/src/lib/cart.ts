@@ -213,6 +213,10 @@ export function subscribeToCartChanges(callback: () => void) {
 }
 
 export function canReserveInCart(purchase: Purchase): boolean {
+  const joined = purchase.my_quantity != null && purchase.my_quantity > 0;
+  if (joined && purchase.status === "closed") {
+    return true;
+  }
   if (purchase.status !== "collecting" && purchase.status !== "closed") {
     return false;
   }

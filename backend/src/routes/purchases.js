@@ -769,18 +769,28 @@ router.post("/:id/join", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Сделка ещё не опубликована в каталоге." });
     }
 
-    if (purchase.status !== "collecting") {
-      return res.status(400).json({ message: "Присоединиться можно только на этапе сбора заявок." });
-    }
+    const existingRes = await pool.query(
+      `SELECT 1 FROM purchase_participants WHERE purchase_id = $1 AND user_id = $2`,
+      [id, req.user.id]
+    );
+    const alreadyParticipant = existingRes.rows.length > 0;
 
-    if (purchase.organizer_id === req.user.id) {
-      return res.status(400).json({ message: "Организатор не может добавлять заявку к своей же закупке." });
-    }
+    if (!alreadyParticipant) {
+      if (purchase.status !== "collecting") {
+        return res.status(400).json({ message: "Присоединиться можно только на этапе сбора заявок." });
+      }
 
-    const dl = new Date(purchase.deadline);
+      if (purchase.organizer_id === req.user.id) {
+        return res.status(400).json({ message: "Организатор не может добавлять заявку к своей же закупке." });
+      }
 
-    if (dl.getTime() < Date.now()) {
-      return res.status(400).json({ message: "Срок сбора заявок истёк." });
+      const dl = new Date(purchase.deadline);
+
+      if (dl.getTime() < Date.now()) {
+        return res.status(400).json({ message: "Срок сбора заявок истёк." });
+      }
+    } else if (purchase.status !== "collecting" && purchase.status !== "closed") {
+      return res.status(400).json({ message: "Оформить заказ для этой сделки больше нельзя." });
     }
 
     await pool.query(
