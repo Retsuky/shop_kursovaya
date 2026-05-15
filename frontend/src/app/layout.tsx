@@ -19,7 +19,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CoBuy — совместные покупки",
+  title: "CoBuy - Совместные покупки от Эм. В.А. ИКБО-11-23",
   description: "Объединяйтесь, чтобы покупать любимые товары по оптовым ценам.",
 };
 
