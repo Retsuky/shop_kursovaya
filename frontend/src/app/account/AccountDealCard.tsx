@@ -4,6 +4,7 @@ import type { Purchase } from "../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../lib/purchasesMeta";
 import { catalogProgress } from "../../lib/catalogDisplay";
 import ParticipantAvatar from "../../lib/ParticipantAvatar";
+import { resolveUploadUrl } from "../../lib/resolveUploadUrl";
 import styles from "./account-deal-card.module.css";
 
 type Role = "organizer" | "participant";
@@ -15,7 +16,7 @@ type Props = {
 
 export default function AccountDealCard({ purchase, role }: Props) {
   const { percent, participantsLabel } = catalogProgress(purchase);
-  const imageUrl = purchase.image_url?.trim() || "";
+  const imageUrl = resolveUploadUrl(purchase.image_url);
 
   const status = purchase.status;
   const collecting = status === "collecting";

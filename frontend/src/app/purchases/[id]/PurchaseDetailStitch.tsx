@@ -19,6 +19,7 @@ import {
   purchasePricePresentation,
 } from "../../../lib/catalogDisplay";
 import ParticipantAvatar from "../../../lib/ParticipantAvatar";
+import { resolveUploadUrl } from "../../../lib/resolveUploadUrl";
 import PurchaseReviews from "./PurchaseDiscussion";
 import type { Purchase, PurchaseStatus } from "../../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../../lib/purchasesMeta";
@@ -72,7 +73,7 @@ export default function PurchaseDetailStitch({
   const [ratingAvg, setRatingAvg] = useState<number>(Number(purchase.rating_avg ?? 0));
   const [ratingCount, setRatingCount] = useState<number>(Number(purchase.rating_count ?? 0));
 
-  const imageUrl = purchase.image_url?.trim() || "";
+  const imageUrl = resolveUploadUrl(purchase.image_url);
   const pricePres = purchasePricePresentation(purchase);
   const { percent, participantsLabel } = catalogProgress(purchase);
   const disc = discountPercent(purchase);

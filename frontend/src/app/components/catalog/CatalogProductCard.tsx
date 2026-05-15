@@ -9,6 +9,7 @@ import {
   purchasePricePresentation,
 } from "../../../lib/catalogDisplay";
 import ParticipantAvatar from "../../../lib/ParticipantAvatar";
+import { resolveUploadUrl } from "../../../lib/resolveUploadUrl";
 import AddToCartButton from "../cart/AddToCartButton";
 import tokens from "../landing/landing-tokens.module.css";
 import styles from "./catalog-product-card.module.css";
@@ -42,7 +43,7 @@ export default function CatalogProductCard({ purchase, alreadyJoined = false }: 
   const barTone = almost ? "tertiary" : "primary";
   const showPulse = almost && collecting;
 
-  const imageUrl = purchase.image_url?.trim() || "";
+  const imageUrl = resolveUploadUrl(purchase.image_url);
 
   const categoryLabel = purchase.category?.trim() || "Без категории";
   const ratingValue = Number(purchase.rating_avg ?? 0);

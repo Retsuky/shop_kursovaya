@@ -1,5 +1,6 @@
 import type { Purchase } from "./purchasesMeta";
 import { resolvePurchaseUnitPriceRaw } from "./catalogDisplay";
+import { resolveUploadUrl } from "./resolveUploadUrl";
 import api from "./api";
 
 const STORAGE_KEY = "shop_cart_v1";
@@ -88,8 +89,8 @@ export function clearCart() {
 
 /** Актуальная строка корзины по закупке (цена с учётом минимума участников и снимок полей). */
 export function cartLineFromPurchase(purchase: Purchase, existingLine?: CartLine): CartLine {
-  const newImg = purchase.image_url?.trim() ?? "";
-  const imageUrl = newImg || existingLine?.imageUrl?.trim() || "";
+  const newImg = resolveUploadUrl(purchase.image_url);
+  const imageUrl = newImg || resolveUploadUrl(existingLine?.imageUrl) || "";
   return {
     purchaseId: purchase.id,
     title: purchase.title,

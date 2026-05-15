@@ -11,6 +11,7 @@ import {
   isAlmostFull,
 } from "../../lib/catalogDisplay";
 import ParticipantAvatar from "../../lib/ParticipantAvatar";
+import { resolveUploadUrl } from "../../lib/resolveUploadUrl";
 import { STATUS_LABELS, STATUS_ORDER } from "../../lib/purchasesMeta";
 import tokens from "../components/landing/landing-tokens.module.css";
 import cardStyles from "../components/catalog/catalog-product-card.module.css";
@@ -63,7 +64,7 @@ export default function AdminProductCard({
   const barTone = almost ? "tertiary" : "primary";
   const showPulse = almost && collecting;
 
-  const imageUrl = purchase.image_url?.trim() || "";
+  const imageUrl = resolveUploadUrl(purchase.image_url);
 
   const categoryLabel = purchase.category?.trim() || "Без категории";
   const preview = purchase.participant_preview ?? [];

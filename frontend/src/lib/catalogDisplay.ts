@@ -1,4 +1,5 @@
 import type { Purchase } from "./purchasesMeta";
+import { resolveUploadUrl } from "./resolveUploadUrl";
 
 export function formatTimeLeft(deadlineIso: string): string {
   const ms = new Date(deadlineIso).getTime() - Date.now();
@@ -226,7 +227,7 @@ export function mapPurchaseToTrendingDeal(purchase: Purchase) {
 
   return {
     title: purchase.title,
-    imageUrl: purchase.image_url?.trim() ?? "",
+    imageUrl: resolveUploadUrl(purchase.image_url),
     imageAlt: purchase.title,
     price: pricePres.mainPrice,
     oldPrice: pricePres.comparePrice,

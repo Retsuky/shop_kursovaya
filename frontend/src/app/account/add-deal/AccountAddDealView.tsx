@@ -10,6 +10,7 @@ import {
   type PurchaseDealFormValues,
 } from "../../../components/purchases/purchaseDealFormTypes";
 import api from "../../../lib/api";
+import { resolveUploadUrl } from "../../../lib/resolveUploadUrl";
 import { formatRub } from "../../../lib/catalogDisplay";
 import type { Purchase, PurchaseStatus } from "../../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../../lib/purchasesMeta";
@@ -133,7 +134,7 @@ export default function AccountAddDealView() {
           <ul className={sub.submissionsList}>
             {submissions.map((p) => {
               const status = String(p.status) as PurchaseStatus;
-              const imageUrl = p.image_url?.trim() ?? "";
+              const imageUrl = resolveUploadUrl(p.image_url);
               const statusLabel = STATUS_LABELS[status] ?? status;
               const statusClass =
                 status === "rejected" ? sub.submissionStatusRejected : sub.submissionStatusPending;

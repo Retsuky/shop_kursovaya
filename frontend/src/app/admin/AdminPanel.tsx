@@ -15,6 +15,7 @@ import type { AuthUser } from "../../lib/auth";
 import { formatRub } from "../../lib/catalogDisplay";
 import type { Purchase, PurchaseStatus } from "../../lib/purchasesMeta";
 import { STATUS_LABELS } from "../../lib/purchasesMeta";
+import { resolveUploadUrl } from "../../lib/resolveUploadUrl";
 import AdminProductCard from "./AdminProductCard";
 import styles from "./admin.module.css";
 
@@ -380,7 +381,7 @@ export default function AdminPanel() {
             ) : (
               <div className={styles.cardGrid}>
                 {submissions.map((p) => {
-                  const imageUrl = p.image_url?.trim() ?? "";
+                  const imageUrl = resolveUploadUrl(p.image_url);
                   return (
                     <article key={p.id} className={styles.submissionCard}>
                       <div className={styles.submissionCardImageWrap}>
@@ -441,7 +442,7 @@ export default function AdminPanel() {
                 </thead>
                 <tbody>
                   {users.map((u) => {
-                    const avatar = typeof u.avatar_url === "string" ? u.avatar_url.trim() : "";
+                    const avatar = resolveUploadUrl(typeof u.avatar_url === "string" ? u.avatar_url : "");
                     const adminCount = users.filter((x) => x.is_admin).length;
                     const cannotRevokeLastAdmin = u.is_admin && adminCount <= 1;
                     return (
@@ -576,9 +577,9 @@ export default function AdminPanel() {
                               <tr key={row.user_id}>
                                 <td>
                                   <div className={styles.participantUserCell}>
-                                    {row.avatar_url ? (
+                                    {resolveUploadUrl(row.avatar_url) ? (
                                       // eslint-disable-next-line @next/next/no-img-element
-                                      <img src={row.avatar_url} alt="" className={styles.participantAvatarImg} />
+                                      <img src={resolveUploadUrl(row.avatar_url)} alt="" className={styles.participantAvatarImg} />
                                     ) : (
                                       <span className={styles.participantAvatarFallback} aria-hidden>
                                         {row.user_name?.trim()?.charAt(0)?.toUpperCase() || "?"}
@@ -625,9 +626,9 @@ export default function AdminPanel() {
                           <tr key={`processing-${row.user_id}`}>
                             <td>
                               <div className={styles.participantUserCell}>
-                                {row.avatar_url ? (
+                                {resolveUploadUrl(row.avatar_url) ? (
                                   // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={row.avatar_url} alt="" className={styles.participantAvatarImg} />
+                                  <img src={resolveUploadUrl(row.avatar_url)} alt="" className={styles.participantAvatarImg} />
                                 ) : (
                                   <span className={styles.participantAvatarFallback} aria-hidden>
                                     {row.user_name?.trim()?.charAt(0)?.toUpperCase() || "?"}

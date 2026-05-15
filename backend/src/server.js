@@ -11,6 +11,8 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT) || 3020;
 
+app.set("trust proxy", 1);
+
 const uploadsDir = path.join(__dirname, "..", "uploads");
 fs.mkdirSync(uploadsDir, { recursive: true });
 

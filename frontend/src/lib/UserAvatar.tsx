@@ -1,13 +1,10 @@
 "use client";
 
 import type { AuthUser } from "./auth";
+import { resolveUploadUrl } from "./resolveUploadUrl";
 
 export function userAvatarSrc(user: Pick<AuthUser, "avatar_url">): string {
-  const u = user.avatar_url?.trim();
-  if (u) {
-    return u;
-  }
-  return "";
+  return resolveUploadUrl(user.avatar_url);
 }
 
 function avatarInitial(user: Pick<AuthUser, "name" | "email">): string {
