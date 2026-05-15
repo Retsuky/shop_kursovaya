@@ -86,62 +86,75 @@ export default function MarketingHeader() {
     router.refresh();
   };
 
+  const navLinks = nav.map((item) => {
+    const active = isNavActive(pathname, item.key);
+    return (
+      <Link
+        key={item.key}
+        href={item.href}
+        className={active ? styles.navLinkActive : styles.navLink}
+      >
+        {item.label}
+      </Link>
+    );
+  });
+
   return (
     <header className={`${tokens.root} ${styles.header}`}>
       <div className={styles.inner}>
-        <Link href="/home" className={styles.brand}>
-          CoBuy
-        </Link>
+        <div className={styles.topRow}>
+          <Link href="/home" className={styles.brand}>
+            CoBuy
+          </Link>
 
-        <nav className={styles.nav} aria-label="Основное меню">
-          {nav.map((item) => {
-            const active = isNavActive(pathname, item.key);
-            return (
-              <Link
-                key={item.key}
-                href={item.href}
-                className={active ? styles.navLinkActive : styles.navLink}
-              >
-                {item.label}
+          <nav className={styles.nav} aria-label="Основное меню">
+            {navLinks}
+          </nav>
+
+          <div className={styles.actions}>
+            {session?.user?.is_admin === true ? (
+              <Link href="/admin" className={styles.adminLink}>
+                Админ
               </Link>
-            );
-          })}
-        </nav>
+            ) : null}
+            <Link href="/cart" className={styles.cartLink} aria-label="Корзина">
+              <span className={`material-symbols-outlined ${styles.icon}`}>shopping_cart</span>
+              {cartCount > 0 ? (
+                <span className={styles.cartBadge}>{cartCount > 99 ? "99+" : cartCount}</span>
+              ) : null}
+            </Link>
+            <Link href="/account/notifications" className={styles.iconBtn} aria-label="Уведомления">
+              <span className={`material-symbols-outlined ${styles.icon}`}>notifications</span>
+              {notifUnread > 0 ? (
+                <span className={styles.notifBadge}>{notifUnread > 99 ? "99+" : notifUnread}</span>
+              ) : null}
+            </Link>
 
-        <div className={styles.actions}>
-          {session?.user?.is_admin === true ? (
-            <Link href="/admin" className={styles.adminLink}>
-              Админ
+            {session ? (
+              <div className={styles.userCluster}>
+                <Link href="/account" className={styles.avatarWrap} aria-label="Личный кабинет">
+                  <UserAvatar user={session.user} size={40} className={styles.avatar} />
+                </Link>
+                <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
+                  Выйти
+                </button>
+              </div>
+            ) : (
+              <Link href="/" className={styles.loginLink}>
+                Войти
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <nav className={styles.mobileNav} aria-label="Меню (мобильное)">
+          {navLinks}
+          {session ? (
+            <Link href="/account" className={styles.mobileNavExtra}>
+              Кабинет
             </Link>
           ) : null}
-          <Link href="/cart" className={styles.cartLink} aria-label="Корзина">
-            <span className={`material-symbols-outlined ${styles.icon}`}>shopping_cart</span>
-            {cartCount > 0 ? (
-              <span className={styles.cartBadge}>{cartCount > 99 ? "99+" : cartCount}</span>
-            ) : null}
-          </Link>
-          <Link href="/account/notifications" className={styles.iconBtn} aria-label="Уведомления">
-            <span className={`material-symbols-outlined ${styles.icon}`}>notifications</span>
-            {notifUnread > 0 ? (
-              <span className={styles.notifBadge}>{notifUnread > 99 ? "99+" : notifUnread}</span>
-            ) : null}
-          </Link>
-
-          {session ? (
-            <div className={styles.userCluster}>
-              <Link href="/account" className={styles.avatarWrap} aria-label="Личный кабинет">
-                <UserAvatar user={session.user} size={40} className={styles.avatar} />
-              </Link>
-              <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
-                Выйти
-              </button>
-            </div>
-          ) : (
-            <Link href="/" className={styles.loginLink}>
-              Войти
-            </Link>
-          )}
-        </div>
+        </nav>
       </div>
     </header>
   );

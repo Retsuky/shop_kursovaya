@@ -11,18 +11,87 @@
 
 .inner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
   max-width: 80rem;
   margin: 0 auto;
   padding: 0 16px;
-  min-height: 80px;
 }
 
 @media (min-width: 768px) {
   .inner {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     padding: 0 48px;
+    min-height: 80px;
+  }
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+}
+
+@media (min-width: 768px) {
+  .topRow {
+    flex: 1;
+    min-height: 80px;
+  }
+}
+
+.mobileNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 0 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 8px;
+}
+
+.mobileNav::-webkit-scrollbar {
+  display: none;
+}
+
+.mobileNav .navLink,
+.mobileNav .navLinkActive {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border-bottom: none;
+  background: #f8fafc;
+}
+
+.mobileNav .navLinkActive {
+  background: rgba(13, 148, 136, 0.12);
+}
+
+.mobileNavExtra {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0d9488;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: rgba(13, 148, 136, 0.08);
+}
+
+@media (min-width: 768px) {
+  .mobileNav {
+    display: none;
   }
 }
 
@@ -49,6 +118,8 @@
 @media (min-width: 768px) {
   .nav {
     display: flex;
+    flex: 1;
+    justify-content: center;
   }
 }
 
@@ -132,7 +203,7 @@
 
 .iconBtn {
   position: relative;
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 8px 12px;
@@ -140,6 +211,7 @@
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.2s ease, transform 0.15s ease;
 }
 
@@ -158,12 +230,6 @@
   line-height: 18px;
   text-align: center;
   font-family: var(--cb-font);
-}
-
-@media (min-width: 640px) {
-  .iconBtn {
-    display: inline-flex;
-  }
 }
 
 .iconBtn:hover {
