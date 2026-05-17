@@ -8,7 +8,6 @@
 ![Express](https://img.shields.io/badge/Express-5.2-000000?logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![License](https://img.shields.io/badge/License-ISC-blue)
 
 ---
 
@@ -23,8 +22,6 @@
 - [Структура проекта](#структура-проекта)
 - [Демо и скриншоты](#демо-и-скриншоты)
 - [Деплой на Render](#деплой-на-render)
-- [Участие в разработке](#участие-в-разработке)
-- [Лицензия](#лицензия)
 
 ---
 
