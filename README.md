@@ -337,25 +337,6 @@ Health check: `/api/health`.
 
 ---
 
-## Участие в разработке
-
-1. Fork репозитория.
-2. Ветка: `git checkout -b feature/краткое-описание`.
-3. Перед PR:
-
-   ```bash
-   pnpm run lint
-   pnpm run fuzz
-   ```
-
-   (`fuzz` требует запущенный backend.)
-
-4. Pull Request в `main` с описанием изменений.
-
-**Стиль коммитов:** `feat:`, `fix:`, `docs:`, `test:` + краткое описание.
-
----
-
 <p align="center">
   <sub>CoBuy · Совместные покупки · ИКБО-11-23</sub>
 </p>
