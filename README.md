@@ -32,11 +32,11 @@
 
 **CoBuy** — учебный fullstack-проект интернет-магазина формата **совместных закупок**. Пользователи присоединяются к сделке, пока не наберётся минимальное число участников; после закрытия набора оформляют заказ и оплачивают организатору по указанным реквизитам.
 
-| | |
-|---|---|
-| **Аудитория** | Участники закупок, организаторы сделок, администраторы платформы |
-| **Проблема** | Разрозненные заказы без прозрачного статуса сбора и единого каталога групповых цен |
-| **Решение** | Единый каталог сделок, корзина, личный кабинет, модерация заявок и админ-панель |
+|               |                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------- |
+| **Аудитория** | Участники закупок, организаторы сделок, администраторы платформы                   |
+| **Проблема**  | Разрозненные заказы без прозрачного статуса сбора и единого каталога групповых цен |
+| **Решение**   | Единый каталог сделок, корзина, личный кабинет, модерация заявок и админ-панель    |
 
 Архитектура: **отдельный Next.js-фронтенд** и **Express REST API** с общей PostgreSQL. Бизнес-логика сосредоточена на бэкенде; фронтенд — App Router и клиентское состояние (localStorage для сессии и корзины).
 
@@ -76,12 +76,12 @@
 
 ## Технологический стек
 
-| Категория | Технологии |
-|-----------|------------|
-| **Фронтенд** | Next.js 16 (App Router), React 19, TypeScript, CSS Modules, axios |
-| **Бэкенд** | Node.js, Express 5, `pg` (raw SQL), bcryptjs, jsonwebtoken, multer |
-| **База данных** | PostgreSQL 16 (схема через `initDb` при старте API) |
-| **Деплой** | Docker Compose (локально), Render / [указать live URL] (прод) |
+| Категория       | Технологии                                                                   |
+| --------------- | ---------------------------------------------------------------------------- |
+| **Фронтенд**    | Next.js 16 (App Router), React 19, TypeScript, CSS Modules, axios            |
+| **Бэкенд**      | Node.js, Express 5, `pg` (raw SQL), bcryptjs, jsonwebtoken, multer           |
+| **База данных** | PostgreSQL 16 (схема через `initDb` при старте API)                          |
+| **Деплой**      | Docker Compose (локально), Render / [указать live URL] (прод)                |
 | **Инструменты** | pnpm, ESLint (`eslint-config-next`), concurrently, nodemon, скрипты фаззинга |
 
 ---
@@ -207,13 +207,13 @@ pnpm run fuzz
 
 ### Переменные фаззинга
 
-| Переменная | Описание | По умолчанию |
-|------------|----------|--------------|
-| `FUZZ_BASE_URL` | URL API без суффикса `/api` | `http://localhost:3020` |
-| `FUZZ_ITERATIONS` | Итераций на каждый сьют (1–500) | `15` |
-| `FUZZ_SEED` | Seed для воспроизводимости `Math.random` | случайный |
-| `FUZZ_USER_EMAIL` | Логин для получения JWT | `admin@shop.local` |
-| `FUZZ_USER_PASSWORD` | Пароль | `admin123` |
+| Переменная           | Описание                                 | По умолчанию            |
+| -------------------- | ---------------------------------------- | ----------------------- |
+| `FUZZ_BASE_URL`      | URL API без суффикса `/api`              | `http://localhost:3020` |
+| `FUZZ_ITERATIONS`    | Итераций на каждый сьют (1–500)          | `15`                    |
+| `FUZZ_SEED`          | Seed для воспроизводимости `Math.random` | случайный               |
+| `FUZZ_USER_EMAIL`    | Логин для получения JWT                  | `admin@shop.local`      |
+| `FUZZ_USER_PASSWORD` | Пароль                                   | `admin123`              |
 
 Пример с увеличенной нагрузкой:
 
@@ -223,12 +223,12 @@ FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 
 ### Сьюты и файлы
 
-| Сьют | Файл | Что проверяет |
-|------|------|----------------|
-| `public` | [`backend/scripts/fuzz/fuzz-public.js`](backend/scripts/fuzz/fuzz-public.js) | health, каталог, auth register/login, публичные GET |
-| `auth` | [`backend/scripts/fuzz/fuzz-auth.js`](backend/scripts/fuzz/fuzz-auth.js) | невалидные токены, profile, password, notifications |
-| `purchases` | [`backend/scripts/fuzz/fuzz-purchases.js`](backend/scripts/fuzz/fuzz-purchases.js) | submit, join, reviews, discussion |
-| `admin` | [`backend/scripts/fuzz/fuzz-admin.js`](backend/scripts/fuzz/fuzz-admin.js) | admin CRUD, approve/reject (нужен admin JWT) |
+| Сьют        | Файл                                                                               | Что проверяет                                       |
+| ----------- | ---------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `public`    | [`backend/scripts/fuzz/fuzz-public.js`](backend/scripts/fuzz/fuzz-public.js)       | health, каталог, auth register/login, публичные GET |
+| `auth`      | [`backend/scripts/fuzz/fuzz-auth.js`](backend/scripts/fuzz/fuzz-auth.js)           | невалидные токены, profile, password, notifications |
+| `purchases` | [`backend/scripts/fuzz/fuzz-purchases.js`](backend/scripts/fuzz/fuzz-purchases.js) | submit, join, reviews, discussion                   |
+| `admin`     | [`backend/scripts/fuzz/fuzz-admin.js`](backend/scripts/fuzz/fuzz-admin.js)         | admin CRUD, approve/reject (нужен admin JWT)        |
 
 Точка входа: [`backend/scripts/fuzz/run-fuzz.js`](backend/scripts/fuzz/run-fuzz.js).
 
@@ -246,36 +246,36 @@ Unit-тесты (Jest/Vitest) в проекте отдельно не настр
 
 ### Backend (`backend/.env`)
 
-| Переменная | Описание | Пример | Обязательно |
-|------------|----------|--------|-------------|
-| `PORT` | Порт API | `3020` | Нет (default `3020`) |
-| `DB_HOST` | Хост PostgreSQL | `localhost` | Да |
-| `DB_PORT` | Порт БД | `5432` | Нет |
-| `DB_NAME` | Имя БД | `shop_together` | Да |
-| `DB_USER` | Пользователь БД | `postgres` | Да |
-| `DB_PASSWORD` | Пароль БД | `***` | Да |
-| `JWT_SECRET` | Секрет подписи JWT | длинная случайная строка | Да (prod) |
-| `PUBLIC_BASE_URL` | Публичный URL API (для ссылок на `/uploads`) | `https://api.example.com` | Да (prod) |
-| `ADMIN_EMAIL` | Email bootstrap-админа | `admin@shop.local` | Нет |
-| `ADMIN_PASSWORD` | Пароль bootstrap-админа | `***` | Нет (сменить в prod!) |
+| Переменная        | Описание                                     | Пример                    | Обязательно           |
+| ----------------- | -------------------------------------------- | ------------------------- | --------------------- |
+| `PORT`            | Порт API                                     | `3020`                    | Нет (default `3020`)  |
+| `DB_HOST`         | Хост PostgreSQL                              | `localhost`               | Да                    |
+| `DB_PORT`         | Порт БД                                      | `5432`                    | Нет                   |
+| `DB_NAME`         | Имя БД                                       | `shop_together`           | Да                    |
+| `DB_USER`         | Пользователь БД                              | `postgres`                | Да                    |
+| `DB_PASSWORD`     | Пароль БД                                    | `***`                     | Да                    |
+| `JWT_SECRET`      | Секрет подписи JWT                           | длинная случайная строка  | Да (prod)             |
+| `PUBLIC_BASE_URL` | Публичный URL API (для ссылок на `/uploads`) | `https://api.example.com` | Да (prod)             |
+| `ADMIN_EMAIL`     | Email bootstrap-админа                       | `admin@shop.local`        | Нет                   |
+| `ADMIN_PASSWORD`  | Пароль bootstrap-админа                      | `***`                     | Нет (сменить в prod!) |
 
 Полный пример: [`backend/.env.example`](backend/.env.example).
 
 ### Frontend (`frontend/.env.local`)
 
-| Переменная | Описание | Пример | Обязательно |
-|------------|----------|--------|-------------|
-| `NEXT_PUBLIC_API_URL` | Базовый URL API | `http://localhost:3020/api` | Да (prod) |
+| Переменная            | Описание        | Пример                      | Обязательно |
+| --------------------- | --------------- | --------------------------- | ----------- |
+| `NEXT_PUBLIC_API_URL` | Базовый URL API | `http://localhost:3020/api` | Да (prod)   |
 
 ### Docker Compose (корень, опционально)
 
-| Переменная | Описание | Default |
-|------------|----------|---------|
-| `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Postgres | `postgres` / `shopdev` / `shop` |
-| `JWT_SECRET` | JWT для backend | `docker-dev-change-me` |
-| `NEXT_PUBLIC_API_URL` | URL API при сборке фронта | `http://localhost:3020/api` |
-| `BACKEND_PORT`, `FRONTEND_PORT` | Проброс портов | `3020`, `3000` |
-| `PUBLIC_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Backend | пусто |
+| Переменная                                         | Описание                  | Default                         |
+| -------------------------------------------------- | ------------------------- | ------------------------------- |
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`                | Postgres                  | `postgres` / `shopdev` / `shop` |
+| `JWT_SECRET`                                       | JWT для backend           | `docker-dev-change-me`          |
+| `NEXT_PUBLIC_API_URL`                              | URL API при сборке фронта | `http://localhost:3020/api`     |
+| `BACKEND_PORT`, `FRONTEND_PORT`                    | Проброс портов            | `3020`, `3000`                  |
+| `PUBLIC_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Backend                   | пусто                           |
 
 ---
 
@@ -309,9 +309,9 @@ shop/
 
 ## Демо и скриншоты
 
-| | |
-|---|---|
-| **Live Demo** | [указать URL фронтенда на Render/Vercel] |
+|                |                                                                 |
+| -------------- | --------------------------------------------------------------- |
+| **Live Demo**  | [указать URL фронтенда на Render/Vercel]                        |
 | **API Health** | `{API_URL}/api/health` → `{ "message": "Backend is running." }` |
 
 ### Как добавить скриншоты
@@ -353,12 +353,6 @@ Health check: `/api/health`.
 4. Pull Request в `main` с описанием изменений.
 
 **Стиль коммитов:** `feat:`, `fix:`, `docs:`, `test:` + краткое описание.
-
----
-
-## Лицензия
-
-Проект распространяется по лицензии **ISC** (см. `license` в `backend/package.json`). Файл `LICENSE` в корне: [TODO: добавить при публикации].
 
 ---
 
