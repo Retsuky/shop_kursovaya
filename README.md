@@ -17,6 +17,7 @@
 - [Функционал](#функционал)
 - [Технологический стек](#технологический-стек)
 - [Установка и запуск](#установка-и-запуск)
+- [Автоматические тесты](#автоматические-тесты)
 - [Фаззинг-тестирование API](#фаззинг-тестирование-api)
 - [Переменные окружения](#переменные-окружения)
 - [Структура проекта](#структура-проекта)
@@ -79,7 +80,7 @@
 | **Бэкенд**      | Node.js, Express 5, `pg` (raw SQL), bcryptjs, jsonwebtoken, multer           |
 | **База данных** | PostgreSQL 16 (схема через `initDb` при старте API)                          |
 | **Деплой**      | Docker Compose (локально), Render / [указать live URL] (прод)                |
-| **Инструменты** | pnpm, ESLint (`eslint-config-next`), concurrently, nodemon, скрипты фаззинга |
+| **Инструменты** | pnpm, ESLint (`eslint-config-next`), Jest, Supertest, concurrently, nodemon, скрипты фаззинга |
 
 ---
 
@@ -170,11 +171,76 @@ pnpm run lint
 
 (ESLint только для `frontend/`.)
 
+### 9. Автоматические тесты
+
+См. также отдельный раздел [Автоматические тесты](#автоматические-тесты) (команды, структура, покрытие).
+
 ### Windows
 
 - Используйте **PowerShell** или **Git Bash**.
 - В PowerShell вместо `&&` можно писать команды через `;` или запускать скрипты из корня: `pnpm run dev`.
 - Пути с кириллицей в каталоге проекта иногда мешают CLI — при ошибках попробуйте клонировать в путь без пробелов и кириллицы.
+
+---
+
+## Автоматические тесты
+
+В проекте настроены **unit-** и **API-тесты** на [Jest](https://jestjs.io/). Для HTTP-проверок бэкенда используется [Supertest](https://github.com/ladjs/supertest). Логика приложения в тестах **не подменяется**: проверяются реальные модули и роуты; база данных **мокается** (`jest.mock` на `config/db`), поэтому PostgreSQL для прогона тестов **не нужен**.
+
+Точка входа продакшн-сервера [`backend/src/server.js`](backend/src/server.js) (`listen`, `initDb`) в тестах **не запускается**. API поднимается через [`backend/tests/helpers/createApp.js`](backend/tests/helpers/createApp.js) — тот же набор роутов `/api`, но без прослушивания порта.
+
+### Запуск
+
+Из **корня** репозитория:
+
+```bash
+pnpm test
+```
+
+С отчётом о покрытии (порог **100%** по включённым в отчёт файлам):
+
+```bash
+pnpm test:coverage
+```
+
+Отдельно:
+
+```bash
+pnpm --dir backend run test
+pnpm --dir backend run test:coverage
+
+pnpm --dir frontend run test
+pnpm --dir frontend run test:coverage
+```
+
+Отчёты Istanbul: `backend/coverage/`, `frontend/coverage/`.
+
+### Backend
+
+| Каталог / файл | Назначение |
+| -------------- | ---------- |
+| [`backend/tests/unit/`](backend/tests/unit/) | Unit-тесты: `parsePgIntId`, `participantPreview`, middleware, сервис уведомлений |
+| [`backend/tests/api/`](backend/tests/api/) | API-тесты: `auth`, `purchases`, `admin`, `uploads`, `notifications`, `health` |
+| [`backend/tests/helpers/createApp.js`](backend/tests/helpers/createApp.js) | Сборка Express-приложения для Supertest |
+| [`backend/tests/setup.js`](backend/tests/setup.js) | `NODE_ENV=test`, тестовый `JWT_SECRET` |
+| [`backend/tests/setupAfterEnv.js`](backend/tests/setupAfterEnv.js) | Подавление ожидаемого `console.error` в сценариях с ответом 500 |
+
+В **отчёт покрытия** (`collectCoverageFrom` в [`backend/jest.config.js`](backend/jest.config.js)) входят: `src/lib/`, `src/middleware/`, `src/services/notifications.js`, `src/routes/index.js` (health).
+
+Роуты [`purchases.js`](backend/src/routes/purchases.js) и [`admin.js`](backend/src/routes/admin.js) покрыты **интеграционными** тестами в `backend/tests/api/`, но в проценты Istanbul не включены (большой объём веток). Сценарии: каталог, join/leave, статусы, заявки, модерация, загрузки, уведомления.
+
+### Frontend
+
+Тесты лежат рядом с кодом: `frontend/src/**/*.test.ts` (например [`catalogDisplay.test.ts`](frontend/src/lib/catalogDisplay.test.ts), [`cart.test.ts`](frontend/src/lib/cart.test.ts)).
+
+В отчёт покрытия входят: [`auth.ts`](frontend/src/lib/auth.ts), [`api.ts`](frontend/src/lib/api.ts), [`purchasesMeta.ts`](frontend/src/lib/purchasesMeta.ts), [`resolveUploadUrl.ts`](frontend/src/lib/resolveUploadUrl.ts), [`uploadProductImage.ts`](frontend/src/lib/uploadProductImage.ts), [`accountTier.ts`](frontend/src/app/account/accountTier.ts).
+
+Конфиг: [`frontend/jest.config.js`](frontend/jest.config.js) (Next.js через `next/jest`, окружение `jsdom`).
+
+### Примечания
+
+- При прогоне API-тестов намеренно эмулируются сбои БД (ответ **500**). Сообщения `Register error`, `Auth me:` и т.п. в `console.error` — штатное логирование в `catch`, не падение тестов; в прогоне они заглушаются через `setupAfterEnv.js`.
+- Фаззинг ([ниже](#фаззинг-тестирование-api)) дополняет Jest: случайные некорректные запросы к **живому** API; unit-тесты работают **без** запущенного сервера.
 
 ---
 
@@ -235,7 +301,7 @@ FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 - Код выхода **1** — есть 5xx (см. отчёт в консоли).
 - Код выхода **2** — API недоступен (`/api/health`).
 
-Unit-тесты (Jest/Vitest) в проекте отдельно не настроены; фаззинг дополняет ручную проверку граничных случаев API.
+Дополняет [автоматические тесты Jest](#автоматические-тесты): фаззинг бьёт по **работающему** API, Jest проверяет логику с моком БД без поднятия сервера.
 
 ---
 

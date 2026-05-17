@@ -10,6 +10,8 @@
     "start": "npm run start --prefix frontend",
     "lint": "npm run lint --prefix frontend",
     "fuzz": "pnpm --dir backend run fuzz",
+    "test": "pnpm --dir backend run test && pnpm --dir frontend run test",
+    "test:coverage": "pnpm --dir backend run test:coverage && pnpm --dir frontend run test:coverage",
     "docker:up": "docker compose up --build",
     "docker:up:detached": "docker compose up --build -d",
     "docker:down": "docker compose down"
