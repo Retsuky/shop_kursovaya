@@ -9,6 +9,7 @@
     "build": "npm run build --prefix frontend",
     "start": "npm run start --prefix frontend",
     "lint": "npm run lint --prefix frontend",
+    "fuzz": "pnpm --dir backend run fuzz",
     "docker:up": "docker compose up --build",
     "docker:up:detached": "docker compose up --build -d",
     "docker:down": "docker compose down"

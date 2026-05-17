@@ -14,6 +14,7 @@ const {
   normalizeParticipantPreview,
 } = require("../lib/participantPreview");
 const { promoteAssemblyToProcessingAfterClose } = require("../lib/participantOrderFlow");
+const { parsePgIntId, parsePgIntIdList } = require("../lib/parsePgIntId");
 
 const PURCHASE_STATUSES = new Set([
   "collecting",
@@ -183,14 +184,18 @@ router.get("/catalog", optionalAuth, async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const status = typeof req.query.status === "string" ? req.query.status : null;
+  const statusRaw = typeof req.query.status === "string" ? req.query.status.trim() : null;
+
+  if (statusRaw && !PURCHASE_STATUSES.has(statusRaw)) {
+    return res.status(400).json({ message: "Недопустимый статус фильтра." });
+  }
 
   try {
     const params = [];
     let where = "WHERE 1=1";
 
-    if (status) {
-      params.push(status);
+    if (statusRaw) {
+      params.push(statusRaw);
       where += ` AND p.status = $${params.length}`;
     }
 
@@ -339,12 +344,7 @@ function parsePurchaseBody(body) {
 /** Реквизиты организаторов для оформления заказа (по id закупок в корзине). */
 router.get("/checkout-requisites", optionalAuth, async (req, res) => {
   const raw = typeof req.query.ids === "string" ? req.query.ids : "";
-  const ids = [...new Set(
-    raw
-      .split(",")
-      .map((s) => Number(String(s).trim()))
-      .filter((n) => Number.isInteger(n) && n > 0)
-  )];
+  const ids = parsePgIntIdList(raw, 48);
 
   if (!ids.length) {
     return res.status(400).json({ message: "Укажите ids — id закупок через запятую." });
@@ -396,9 +396,9 @@ router.get("/checkout-requisites", optionalAuth, async (req, res) => {
 });
 
 router.get("/:id", optionalAuth, async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsePgIntId(req.params.id);
 
-  if (!Number.isInteger(id)) {
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
 
@@ -608,10 +608,10 @@ router.post("/", requireAuth, async (req, res) => {
 });
 
 router.patch("/:id/status", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsePgIntId(req.params.id);
   const { status: nextStatus } = req.body;
 
-  if (!Number.isInteger(id)) {
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
 
@@ -712,7 +712,7 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
 });
 
 router.post("/:id/join", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsePgIntId(req.params.id);
   const qty = 1;
   const rawParticipantStatus =
     req.body?.participant_status != null ? String(req.body.participant_status).trim() : "assembly";
@@ -725,7 +725,7 @@ router.post("/:id/join", requireAuth, async (req, res) => {
   const deliveryComment =
     req.body?.delivery_comment != null ? String(req.body.delivery_comment).trim() : "";
 
-  if (!Number.isInteger(id)) {
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
 
@@ -886,9 +886,9 @@ router.post("/:id/join", requireAuth, async (req, res) => {
 });
 
 router.delete("/:id/join", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsePgIntId(req.params.id);
 
-  if (!Number.isInteger(id)) {
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
 
@@ -994,8 +994,8 @@ function mapReview(row) {
 }
 
 router.get("/:id/reviews", async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id < 1) {
+  const id = parsePgIntId(req.params.id);
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
   try {
@@ -1051,11 +1051,11 @@ router.get("/:id/reviews", async (req, res) => {
 });
 
 router.post("/:id/reviews", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsePgIntId(req.params.id);
   const rating = Number(req.body?.rating);
   const comment = req.body?.comment != null ? String(req.body.comment).trim() : "";
 
-  if (!Number.isInteger(id) || id < 1) {
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
@@ -1139,9 +1139,9 @@ router.post("/:id/reviews", requireAuth, async (req, res) => {
 });
 
 router.get("/:id/discussion", async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsePgIntId(req.params.id);
 
-  if (!Number.isInteger(id) || id < 1) {
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
 
@@ -1179,10 +1179,10 @@ router.get("/:id/discussion", async (req, res) => {
 });
 
 router.post("/:id/discussion", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parsePgIntId(req.params.id);
   const rawBody = req.body?.body;
 
-  if (!Number.isInteger(id) || id < 1) {
+  if (id === null) {
     return res.status(400).json({ message: "Некорректный идентификатор закупки." });
   }
 
