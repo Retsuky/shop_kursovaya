@@ -54,6 +54,15 @@ describe("notifications API", () => {
     expect(missing.status).toBe(404);
   });
 
+  test("GET / — mapRow(null)", async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [null],
+    });
+    const res = await request(createApp()).get("/api/notifications").set(authHeader());
+    expect(res.status).toBe(200);
+    expect(res.body.items).toEqual([null]);
+  });
+
   test("PATCH /:id/read — успех", async () => {
     pool.query.mockResolvedValueOnce({
       rows: [

@@ -349,9 +349,6 @@ router.get("/checkout-requisites", optionalAuth, async (req, res) => {
   if (!ids.length) {
     return res.status(400).json({ message: "Укажите ids — id закупок через запятую." });
   }
-  if (ids.length > 48) {
-    return res.status(400).json({ message: "Слишком много закупок в одном запросе." });
-  }
 
   try {
     const result = await pool.query(

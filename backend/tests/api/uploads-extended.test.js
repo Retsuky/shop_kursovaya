@@ -29,7 +29,23 @@ describe("uploads API — доп. ветки", () => {
     expect(res.status).toBe(201);
   });
 
-  test("слишком большой файл", async () => {
+  test("jpeg по расширению имени", async () => {
+    delete process.env.PUBLIC_BASE_URL;
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64"
+    );
+    const res = await request(createApp())
+      .post("/api/uploads")
+      .set(authHeader())
+      .set("Host", "example.com")
+      .attach("file", png, { filename: "tiny.png", contentType: "image/png" });
+    expect(res.status).toBe(201);
+    expect(res.body.url).toMatch(/uploads\//);
+    process.env.PUBLIC_BASE_URL = "http://localhost:3020";
+  });
+
+  test("слишком большой файл — LIMIT_FILE_SIZE", async () => {
     const big = Buffer.alloc(6 * 1024 * 1024);
     const res = await request(createApp())
       .post("/api/uploads")

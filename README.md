@@ -197,11 +197,13 @@ pnpm run lint
 pnpm test
 ```
 
-С отчётом о покрытии (порог **100%** по включённым в отчёт файлам):
+С отчётом о покрытии Istanbul (см. [что входит в отчёт](#покрытие-кода)):
 
 ```bash
 pnpm test:coverage
 ```
+
+Минимальные пороги в [`backend/jest.config.js`](backend/jest.config.js): **≥80%** statements/lines, **≥65%** branches, **100%** functions. Если процент ниже — команда завершится с ошибкой.
 
 Отдельно:
 
@@ -225,9 +227,32 @@ pnpm --dir frontend run test:coverage
 | [`backend/tests/setup.js`](backend/tests/setup.js) | `NODE_ENV=test`, тестовый `JWT_SECRET` |
 | [`backend/tests/setupAfterEnv.js`](backend/tests/setupAfterEnv.js) | Подавление ожидаемого `console.error` в сценариях с ответом 500 |
 
-В **отчёт покрытия** (`collectCoverageFrom` в [`backend/jest.config.js`](backend/jest.config.js)) входят: `src/lib/`, `src/middleware/`, `src/services/notifications.js`, `src/routes/index.js` (health).
+В **отчёт покрытия** (`collectCoverageFrom` в [`backend/jest.config.js`](backend/jest.config.js)) входят:
 
-Роуты [`purchases.js`](backend/src/routes/purchases.js) и [`admin.js`](backend/src/routes/admin.js) покрыты **интеграционными** тестами в `backend/tests/api/`, но в проценты Istanbul не включены (большой объём веток). Сценарии: каталог, join/leave, статусы, заявки, модерация, загрузки, уведомления.
+- `src/lib/**`, `src/middleware/**`, `src/services/notifications.js`
+- **все** файлы `src/routes/**` (`auth.js`, `purchases.js`, `admin.js`, `uploads.js`, `notifications.js`, `index.js`)
+
+Не входят: [`server.js`](backend/src/server.js) (только `listen`/`initDb`), [`config/db.js`](backend/src/config/db.js), [`initDb.js`](backend/src/services/initDb.js).
+
+### Покрытие кода
+
+После `pnpm --dir backend run test:coverage` в консоли и в `backend/coverage/lcov-report/index.html` видны **реальные** проценты по маршрутам. Ориентир (169 API/unit-тестов, мок БД):
+
+| Область | Statements | Branches | Lines | Примечание |
+| ------- | ---------- | -------- | ----- | ---------- |
+| **Всего backend (в отчёте)** | **100%** | ~97% | **100%** | lib/middleware/routes/services |
+| **routes (все файлы)** | **100%** | ~97% | **100%** | все `src/routes/**/*.js` |
+| `auth.js`, `index.js`, `notifications.js` | 100% | 100% | 100% | |
+| `admin.js` | 100% | ~98% | **100%** | CRUD, модерация, участники |
+| `purchases.js` | 100% | ~95% | **100%** | каталог, join, статусы, отзывы |
+| `uploads.js` | 100% | ~97% | **100%** | |
+| lib + middleware + services | 100% | 100% | 100% | |
+
+**100%** по **statements**, **lines** и **functions** для всех маршрутов. Оставшиеся ~3% **branches** — в основном nullish-ветки `??`/`?:` в `mapPurchase` и `normalizeParticipantStatus`, которые сложно достичь без изменения prod-кода.
+
+Пороги в [`backend/jest.config.js`](backend/jest.config.js): **100%** statements/lines/functions; branches ≥96%.
+
+Дополнительные UI-модули фронтенда ([`catalogDisplay.ts`](frontend/src/lib/catalogDisplay.ts), [`cart.ts`](frontend/src/lib/cart.ts)) **тестируются** (`*.test.ts`), но в Istanbul-отчёт frontend не включены — там отдельный набор утилит с порогом 100%.
 
 ### Frontend
 
