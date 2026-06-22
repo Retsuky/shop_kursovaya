@@ -74,12 +74,12 @@
 
 ## Технологический стек
 
-| Категория       | Технологии                                                                   |
-| --------------- | ---------------------------------------------------------------------------- |
-| **Фронтенд**    | Next.js 16 (App Router), React 19, TypeScript, CSS Modules, axios            |
-| **Бэкенд**      | Node.js, Express 5, `pg` (raw SQL), bcryptjs, jsonwebtoken, multer           |
-| **База данных** | PostgreSQL 16 (схема через `initDb` при старте API)                          |
-| **Деплой**      | Docker Compose (локально), Render / [указать live URL] (прод)                |
+| Категория       | Технологии                                                                                    |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| **Фронтенд**    | Next.js 16 (App Router), React 19, TypeScript, CSS Modules, axios                             |
+| **Бэкенд**      | Node.js, Express 5, `pg` (raw SQL), bcryptjs, jsonwebtoken, multer                            |
+| **База данных** | PostgreSQL 16 (схема через `initDb` при старте API)                                           |
+| **Деплой**      | Docker Compose (локально), Render / [https://shop-frontend-6rmj.onrender.com] (прод)          |
 | **Инструменты** | pnpm, ESLint (`eslint-config-next`), Jest, Supertest, concurrently, nodemon, скрипты фаззинга |
 
 ---
@@ -219,13 +219,13 @@ pnpm --dir frontend run test:coverage
 
 ### Backend
 
-| Каталог / файл | Назначение |
-| -------------- | ---------- |
-| [`backend/tests/unit/`](backend/tests/unit/) | Unit-тесты: `parsePgIntId`, `participantPreview`, middleware, сервис уведомлений |
-| [`backend/tests/api/`](backend/tests/api/) | API-тесты: `auth`, `purchases`, `admin`, `uploads`, `notifications`, `health` |
-| [`backend/tests/helpers/createApp.js`](backend/tests/helpers/createApp.js) | Сборка Express-приложения для Supertest |
-| [`backend/tests/setup.js`](backend/tests/setup.js) | `NODE_ENV=test`, тестовый `JWT_SECRET` |
-| [`backend/tests/setupAfterEnv.js`](backend/tests/setupAfterEnv.js) | Подавление ожидаемого `console.error` в сценариях с ответом 500 |
+| Каталог / файл                                                             | Назначение                                                                       |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [`backend/tests/unit/`](backend/tests/unit/)                               | Unit-тесты: `parsePgIntId`, `participantPreview`, middleware, сервис уведомлений |
+| [`backend/tests/api/`](backend/tests/api/)                                 | API-тесты: `auth`, `purchases`, `admin`, `uploads`, `notifications`, `health`    |
+| [`backend/tests/helpers/createApp.js`](backend/tests/helpers/createApp.js) | Сборка Express-приложения для Supertest                                          |
+| [`backend/tests/setup.js`](backend/tests/setup.js)                         | `NODE_ENV=test`, тестовый `JWT_SECRET`                                           |
+| [`backend/tests/setupAfterEnv.js`](backend/tests/setupAfterEnv.js)         | Подавление ожидаемого `console.error` в сценариях с ответом 500                  |
 
 В **отчёт покрытия** (`collectCoverageFrom` в [`backend/jest.config.js`](backend/jest.config.js)) входят:
 
@@ -238,15 +238,15 @@ pnpm --dir frontend run test:coverage
 
 После `pnpm --dir backend run test:coverage` в консоли и в `backend/coverage/lcov-report/index.html` видны **реальные** проценты по маршрутам. Ориентир (169 API/unit-тестов, мок БД):
 
-| Область | Statements | Branches | Lines | Примечание |
-| ------- | ---------- | -------- | ----- | ---------- |
-| **Всего backend (в отчёте)** | **100%** | ~97% | **100%** | lib/middleware/routes/services |
-| **routes (все файлы)** | **100%** | ~97% | **100%** | все `src/routes/**/*.js` |
-| `auth.js`, `index.js`, `notifications.js` | 100% | 100% | 100% | |
-| `admin.js` | 100% | ~98% | **100%** | CRUD, модерация, участники |
-| `purchases.js` | 100% | ~95% | **100%** | каталог, join, статусы, отзывы |
-| `uploads.js` | 100% | ~97% | **100%** | |
-| lib + middleware + services | 100% | 100% | 100% | |
+| Область                                   | Statements | Branches | Lines    | Примечание                     |
+| ----------------------------------------- | ---------- | -------- | -------- | ------------------------------ |
+| **Всего backend (в отчёте)**              | **100%**   | ~97%     | **100%** | lib/middleware/routes/services |
+| **routes (все файлы)**                    | **100%**   | ~97%     | **100%** | все `src/routes/**/*.js`       |
+| `auth.js`, `index.js`, `notifications.js` | 100%       | 100%     | 100%     |                                |
+| `admin.js`                                | 100%       | ~98%     | **100%** | CRUD, модерация, участники     |
+| `purchases.js`                            | 100%       | ~95%     | **100%** | каталог, join, статусы, отзывы |
+| `uploads.js`                              | 100%       | ~97%     | **100%** |                                |
+| lib + middleware + services               | 100%       | 100%     | 100%     |                                |
 
 **100%** по **statements**, **lines** и **functions** для всех маршрутов. Оставшиеся ~3% **branches** — в основном nullish-ветки `??`/`?:` в `mapPurchase` и `normalizeParticipantStatus`, которые сложно достичь без изменения prod-кода.
 
@@ -357,13 +357,13 @@ FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 
 ### Docker Compose (корень, опционально)
 
-| Переменная                                         | Описание                  | Default                         |
-| -------------------------------------------------- | ------------------------- | ------------------------------- |
-| `DB_USER`, `DB_PASSWORD`, `DB_NAME`                | Postgres                  | из `.env` (см. `.env.example`)  |
-| `JWT_SECRET`, `ADMIN_PASSWORD`                     | Секреты backend           | из `.env` (см. `.env.example`)  |
-| `NEXT_PUBLIC_API_URL`                              | URL API при сборке фронта | `http://localhost:3020/api`     |
-| `BACKEND_PORT`, `FRONTEND_PORT`                    | Проброс портов            | `3020`, `3000`                  |
-| `PUBLIC_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Backend                   | пусто                           |
+| Переменная                                         | Описание                  | Default                        |
+| -------------------------------------------------- | ------------------------- | ------------------------------ |
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`                | Postgres                  | из `.env` (см. `.env.example`) |
+| `JWT_SECRET`, `ADMIN_PASSWORD`                     | Секреты backend           | из `.env` (см. `.env.example`) |
+| `NEXT_PUBLIC_API_URL`                              | URL API при сборке фронта | `http://localhost:3020/api`    |
+| `BACKEND_PORT`, `FRONTEND_PORT`                    | Проброс портов            | `3020`, `3000`                 |
+| `PUBLIC_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Backend                   | пусто                          |
 
 ---
 
@@ -399,7 +399,7 @@ shop/
 
 |                |                                                                 |
 | -------------- | --------------------------------------------------------------- |
-| **Live Demo**  | [указать URL фронтенда на Render/Vercel]                        |
+| **Live Demo**  | [https://shop-frontend-6rmj.onrender.com]                       |
 | **API Health** | `{API_URL}/api/health` → `{ "message": "Backend is running." }` |
 
 ### Как добавить скриншоты
