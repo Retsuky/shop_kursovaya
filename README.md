@@ -20,6 +20,7 @@
 - [Автоматические тесты](#автоматические-тесты)
 - [Фаззинг-тестирование API](#фаззинг-тестирование-api)
 - [Переменные окружения](#переменные-окружения)
+- [Конфигурация (12-Factor App)](#конфигурация-12-factor-app)
 - [Структура проекта](#структура-проекта)
 - [Демо и скриншоты](#демо-и-скриншоты)
 - [Деплой на Render](#деплой-на-render)
@@ -37,6 +38,8 @@
 | **Решение**   | Единый каталог сделок, корзина, личный кабинет, модерация заявок и админ-панель    |
 
 Архитектура: **отдельный Next.js-фронтенд** и **Express REST API** с общей PostgreSQL. Бизнес-логика сосредоточена на бэкенде; фронтенд — App Router и клиентское состояние (localStorage для сессии и корзины).
+
+**Production (Render):** [https://shop-frontend-6rmj.onrender.com](https://shop-frontend-6rmj.onrender.com)
 
 ---
 
@@ -74,13 +77,13 @@
 
 ## Технологический стек
 
-| Категория       | Технологии                                                                                    |
-| --------------- | --------------------------------------------------------------------------------------------- |
-| **Фронтенд**    | Next.js 16 (App Router), React 19, TypeScript, CSS Modules, axios                             |
-| **Бэкенд**      | Node.js, Express 5, `pg` (raw SQL), bcryptjs, jsonwebtoken, multer                            |
-| **База данных** | PostgreSQL 16 (схема через `initDb` при старте API)                                           |
-| **Деплой**      | Docker Compose (локально), Render / [https://shop-frontend-6rmj.onrender.com] (прод)          |
-| **Инструменты** | pnpm, ESLint (`eslint-config-next`), Jest, Supertest, concurrently, nodemon, скрипты фаззинга |
+| Категория       | Технологии                                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Фронтенд**    | Next.js 16 (App Router), React 19, TypeScript, CSS Modules, axios                                                                          |
+| **Бэкенд**      | Node.js, Express 5, `pg` (raw SQL), bcryptjs, jsonwebtoken, multer                                                                         |
+| **База данных** | PostgreSQL 16 (схема через `initDb` при старте API)                                                                                        |
+| **Деплой**      | Docker Compose (локально), [Render](https://render.com) — прод: [shop-frontend-6rmj.onrender.com](https://shop-frontend-6rmj.onrender.com) |
+| **Инструменты** | pnpm, ESLint (`eslint-config-next`), Jest, Supertest, concurrently, nodemon, скрипты фаззинга                                              |
 
 ---
 
@@ -109,10 +112,18 @@ pnpm --dir backend install
 
 ### 3. Настройка окружения
 
-Скопируйте пример и отредактируйте `backend/.env`:
+Секреты **не захардкожены** в коде и Docker Compose — только через переменные окружения (см. [Конфигурация (12-Factor App)](#конфигурация-12-factor-app)).
+
+**Локальный backend** (без Docker):
 
 ```bash
 cp backend/.env.example backend/.env
+```
+
+**Docker Compose** (весь стек из корня):
+
+```bash
+cp .env.example .env
 ```
 
 Для фронтенда при необходимости создайте `frontend/.env.local`:
@@ -153,7 +164,10 @@ pnpm run start
 
 ### 7. Docker (весь стек)
 
+Перед первым запуском создайте `.env` в **корне** из [`.env.example`](.env.example). В [`docker-compose.yml`](docker-compose.yml) пароли и секреты подставляются как `${DB_PASSWORD}`, `${JWT_SECRET}`, `${ADMIN_PASSWORD}` — inline-значений нет.
+
 ```bash
+cp .env.example .env
 pnpm run docker:up
 # или в фоне:
 pnpm run docker:up:detached
@@ -161,7 +175,7 @@ pnpm run docker:up:detached
 pnpm run docker:down
 ```
 
-Порты по умолчанию: фронт **3000**, API **3020**, Postgres **5432**.
+Порты по умолчанию: фронт **3000**, API **3020**, Postgres **5432**. Имя БД по умолчанию в compose — `shop_together` (задаётся в `.env`).
 
 ### 8. Линтер
 
@@ -303,10 +317,10 @@ pnpm run fuzz
 | `FUZZ_USER_EMAIL`    | Логин для получения JWT                  | `admin@shop.local`      |
 | `FUZZ_USER_PASSWORD` | Пароль (обязателен для JWT-сценариев)    | —                       |
 
-Пример с увеличенной нагрузкой:
+Пример с увеличенной нагрузкой (пароль обязателен для JWT-сценариев):
 
 ```bash
-FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
+FUZZ_USER_PASSWORD=your-admin-password FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 ```
 
 ### Сьюты и файлы
@@ -334,20 +348,20 @@ FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 
 ### Backend (`backend/.env`)
 
-| Переменная        | Описание                                     | Пример                    | Обязательно           |
-| ----------------- | -------------------------------------------- | ------------------------- | --------------------- |
-| `PORT`            | Порт API                                     | `3020`                    | Нет (default `3020`)  |
-| `DB_HOST`         | Хост PostgreSQL                              | `localhost`               | Да                    |
-| `DB_PORT`         | Порт БД                                      | `5432`                    | Нет                   |
-| `DB_NAME`         | Имя БД                                       | `shop_together`           | Да                    |
-| `DB_USER`         | Пользователь БД                              | `postgres`                | Да                    |
-| `DB_PASSWORD`     | Пароль БД                                    | `***`                     | Да                    |
-| `JWT_SECRET`      | Секрет подписи JWT                           | длинная случайная строка  | Да (prod)             |
-| `PUBLIC_BASE_URL` | Публичный URL API (для ссылок на `/uploads`) | `https://api.example.com` | Да (prod)             |
-| `ADMIN_EMAIL`     | Email bootstrap-админа                       | `admin@shop.local`        | Нет                   |
-| `ADMIN_PASSWORD`  | Пароль bootstrap-админа                      | `***`                     | Нет (сменить в prod!) |
+| Переменная        | Описание                                     | Пример                    | Обязательно          |
+| ----------------- | -------------------------------------------- | ------------------------- | -------------------- |
+| `PORT`            | Порт API                                     | `3020`                    | Нет (default `3020`) |
+| `DB_HOST`         | Хост PostgreSQL                              | `localhost`               | Да                   |
+| `DB_PORT`         | Порт БД                                      | `5432`                    | Нет                  |
+| `DB_NAME`         | Имя БД                                       | `shop_together`           | Да                   |
+| `DB_USER`         | Пользователь БД                              | `postgres`                | Да                   |
+| `DB_PASSWORD`     | Пароль БД                                    | `***`                     | Да                   |
+| `JWT_SECRET`      | Секрет подписи JWT                           | длинная случайная строка  | Да (prod)            |
+| `PUBLIC_BASE_URL` | Публичный URL API (для ссылок на `/uploads`) | `https://api.example.com` | Да (prod)            |
+| `ADMIN_EMAIL`     | Email bootstrap-админа                       | `admin@shop.local`        | Нет                  |
+| `ADMIN_PASSWORD`  | Пароль bootstrap-админа (только из env)      | `***`                     | **Да**               |
 
-Полный пример: [`backend/.env.example`](backend/.env.example).
+Полный пример: [`backend/.env.example`](backend/.env.example). Плейсхолдеры `your-strong-password-here` и `CHANGE_ME_IN_PRODUCTION` **нельзя** использовать в production — см. `validateEnv()` ниже.
 
 ### Frontend (`frontend/.env.local`)
 
@@ -355,15 +369,56 @@ FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 | --------------------- | --------------- | --------------------------- | ----------- |
 | `NEXT_PUBLIC_API_URL` | Базовый URL API | `http://localhost:3020/api` | Да (prod)   |
 
-### Docker Compose (корень, опционально)
+### Docker Compose (корень)
 
-| Переменная                                         | Описание                  | Default                        |
-| -------------------------------------------------- | ------------------------- | ------------------------------ |
-| `DB_USER`, `DB_PASSWORD`, `DB_NAME`                | Postgres                  | из `.env` (см. `.env.example`) |
-| `JWT_SECRET`, `ADMIN_PASSWORD`                     | Секреты backend           | из `.env` (см. `.env.example`) |
-| `NEXT_PUBLIC_API_URL`                              | URL API при сборке фронта | `http://localhost:3020/api`    |
-| `BACKEND_PORT`, `FRONTEND_PORT`                    | Проброс портов            | `3020`, `3000`                 |
-| `PUBLIC_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Backend                   | пусто                          |
+Файл [`.env.example`](.env.example) в корне — шаблон для `docker compose`. Секреты передаются в контейнеры через переменные:
+
+| Переменная                          | Описание                  | Откуда берётся                               |
+| ----------------------------------- | ------------------------- | -------------------------------------------- |
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Postgres                  | `.env` (обязательно для `DB_PASSWORD`)       |
+| `JWT_SECRET`, `ADMIN_PASSWORD`      | Секреты backend           | `.env` (обязательно, без дефолтов)           |
+| `NEXT_PUBLIC_API_URL`               | URL API при сборке фронта | `.env` (default `http://localhost:3020/api`) |
+| `BACKEND_PORT`, `FRONTEND_PORT`     | Проброс портов            | `.env` (default `3020`, `3000`)              |
+| `PUBLIC_BASE_URL`, `ADMIN_EMAIL`    | Backend                   | `.env`                                       |
+
+---
+
+## Конфигурация (12-Factor App)
+
+Проект следует **фактору III** [The Twelve-Factor App](https://12factor.net/config): конфигурация (секреты, пароли, URL) хранится в **переменных окружения**, а не в коде или `docker-compose.yml`.
+
+### Что сделано
+
+| Компонент                                                                      | Поведение                                                                                              |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| [`docker-compose.yml`](docker-compose.yml)                                     | `DB_PASSWORD`, `JWT_SECRET`, `ADMIN_PASSWORD` — только `${VAR}` из `.env`, без захардкоженных значений |
+| [`.env.example`](.env.example), [`backend/.env.example`](backend/.env.example) | Плейсхолдеры `your-strong-password-here`, `CHANGE_ME_IN_PRODUCTION` вместо реальных паролей            |
+| [`backend/src/services/initDb.js`](backend/src/services/initDb.js)             | Пароль bootstrap-админа **только** из `process.env.ADMIN_PASSWORD`; если не задан — `throw new Error`  |
+| [`backend/src/server.js`](backend/src/server.js)                               | `validateEnv()` вызывается **до** подключения Express и роутов                                         |
+| [`backend/scripts/fuzz/fuzz-auth.js`](backend/scripts/fuzz/fuzz-auth.js)       | Нет fallback `admin123`; JWT-сценарии требуют `FUZZ_USER_PASSWORD`                                     |
+
+### `validateEnv()` (production)
+
+При `NODE_ENV=production` backend **не стартует**, если:
+
+- `JWT_SECRET` пустой или совпадает с слабыми значениями: `secret`, `changeme`, `docker-devchange-me`, `docker-dev-change-me`, `your-jwt-secret`
+- `DB_PASSWORD` пустой
+- `ADMIN_PASSWORD` пустой или равен `admin123` / `password`
+
+В dev (`NODE_ENV !== production`) те же проверки выводят **`console.warn`**, но запуск не блокируется.
+
+### Bootstrap-администратор
+
+При первом запуске `initDb` создаёт пользователя с email из `ADMIN_EMAIL` (default `admin@shop.local`) и паролем из **`ADMIN_PASSWORD`**. Если админ уже есть в БД, пароль **не перезаписывается** — смените его через UI или вручную в БД.
+
+### Production на Render
+
+| Сервис          | URL                                                                                |
+| --------------- | ---------------------------------------------------------------------------------- |
+| **Frontend**    | [https://shop-frontend-6rmj.onrender.com](https://shop-frontend-6rmj.onrender.com) |
+| **Backend API** | URL вашего Web Service на Render + `/api/health`                                   |
+
+На Render задайте в Environment все обязательные переменные с **уникальными** значениями (не копируйте плейсхолдеры из `.env.example`). Подробнее — [Деплой на Render](#деплой-на-render).
 
 ---
 
@@ -372,11 +427,14 @@ FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 ```text
 shop/
 ├── package.json              # dev/build/docker/fuzz (корень)
-├── docker-compose.yml
+├── .env.example              # шаблон для Docker Compose (корень)
+├── docker-compose.yml        # секреты только через ${VAR} из .env
 ├── frontend/
 │   ├── src/app/              # страницы Next.js
 │   └── src/lib/              # api, auth, cart
 ├── backend/
+│   ├── .env.example          # шаблон для локального backend
+│   ├── src/server.js         # validateEnv() до Express
 │   ├── src/routes/           # REST API
 │   ├── src/services/         # initDb, notifications
 │   ├── scripts/
@@ -397,10 +455,10 @@ shop/
 
 ## Демо и скриншоты
 
-|                |                                                                 |
-| -------------- | --------------------------------------------------------------- |
-| **Live Demo**  | [https://shop-frontend-6rmj.onrender.com]                       |
-| **API Health** | `{API_URL}/api/health` → `{ "message": "Backend is running." }` |
+|                |                                                                            |
+| -------------- | -------------------------------------------------------------------------- |
+| **Live Demo**  | [shop-frontend-6rmj.onrender.com](https://shop-frontend-6rmj.onrender.com) |
+| **API Health** | `{BACKEND_URL}/api/health` → `{ "message": "Backend is running." }`        |
 
 ### Как добавить скриншоты
 
@@ -416,12 +474,34 @@ shop/
 
 ## Деплой на Render
 
-1. **PostgreSQL** — отдельный инстанс; `DB_HOST` = hostname вида `dpg-xxxxx`, **не** `postgres`.
-2. **Backend** — Web Service, Root: `backend`, Build: `pnpm install --frozen-lockfile`, Start: `node src/server.js`.
-3. **Frontend** — Root: `frontend`, `NEXT_PUBLIC_API_URL=https://<ваш-api>/api`.
-4. **Картинки:** на Free tier папка `uploads/` сбрасывается при рестарте — нужен Persistent Disk (платно) или внешнее хранилище; старые URL перезалить вручную.
+**Production frontend:** [https://shop-frontend-6rmj.onrender.com](https://shop-frontend-6rmj.onrender.com)
 
-Health check: `/api/health`.
+### Сервисы
+
+1. **PostgreSQL** — отдельный инстанс; `DB_HOST` = hostname вида `dpg-xxxxx`, **не** `postgres`.
+2. **Backend** — Web Service, Root: `backend`, Build: `pnpm install --frozen-lockfile`, Start: `node src/server.js`, `NODE_ENV=production`.
+3. **Frontend** — Web Service, Root: `frontend`, Build: `pnpm install --frozen-lockfile && pnpm run build`, Start: `pnpm run start`. Публичный URL: [shop-frontend-6rmj.onrender.com](https://shop-frontend-6rmj.onrender.com).
+
+### Обязательные переменные (backend, production)
+
+| Переменная                                                | Примечание                                             |
+| --------------------------------------------------------- | ------------------------------------------------------ |
+| `NODE_ENV`                                                | `production` (включит `validateEnv`)                   |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | из Render Postgres                                     |
+| `JWT_SECRET`                                              | длинная случайная строка, не из списка слабых значений |
+| `ADMIN_PASSWORD`                                          | сильный пароль, не `admin123` / `password`             |
+| `PUBLIC_BASE_URL`                                         | публичный URL backend (для ссылок на `/uploads`)       |
+
+### Frontend (production)
+
+| Переменная            | Пример                                    |
+| --------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | `https://<your-backend>.onrender.com/api` |
+
+### Прочее
+
+- **Картинки:** на Free tier папка `uploads/` сбрасывается при рестарте — нужен Persistent Disk (платно) или внешнее хранилище; старые URL перезалить вручную.
+- **Health check:** `/api/health`.
 
 ---
 
