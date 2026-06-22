@@ -301,7 +301,7 @@ pnpm run fuzz
 | `FUZZ_ITERATIONS`    | Итераций на каждый сьют (1–500)          | `15`                    |
 | `FUZZ_SEED`          | Seed для воспроизводимости `Math.random` | случайный               |
 | `FUZZ_USER_EMAIL`    | Логин для получения JWT                  | `admin@shop.local`      |
-| `FUZZ_USER_PASSWORD` | Пароль                                   | `admin123`              |
+| `FUZZ_USER_PASSWORD` | Пароль (обязателен для JWT-сценариев)    | —                       |
 
 Пример с увеличенной нагрузкой:
 
@@ -359,8 +359,8 @@ FUZZ_ITERATIONS=50 FUZZ_SEED=2026 pnpm run fuzz
 
 | Переменная                                         | Описание                  | Default                         |
 | -------------------------------------------------- | ------------------------- | ------------------------------- |
-| `DB_USER`, `DB_PASSWORD`, `DB_NAME`                | Postgres                  | `postgres` / `shopdev` / `shop` |
-| `JWT_SECRET`                                       | JWT для backend           | `docker-dev-change-me`          |
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`                | Postgres                  | из `.env` (см. `.env.example`)  |
+| `JWT_SECRET`, `ADMIN_PASSWORD`                     | Секреты backend           | из `.env` (см. `.env.example`)  |
 | `NEXT_PUBLIC_API_URL`                              | URL API при сборке фронта | `http://localhost:3020/api`     |
 | `BACKEND_PORT`, `FRONTEND_PORT`                    | Проброс портов            | `3020`, `3000`                  |
 | `PUBLIC_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Backend                   | пусто                           |

@@ -10,7 +10,11 @@ async function tryLogin(baseUrl, email, password) {
 
 async function obtainToken(baseUrl) {
   const email = process.env.FUZZ_USER_EMAIL?.trim() || "admin@shop.local";
-  const password = process.env.FUZZ_USER_PASSWORD?.trim() || "admin123";
+  const password = process.env.FUZZ_USER_PASSWORD?.trim();
+  if (!password) {
+    console.warn("FUZZ_USER_PASSWORD не задан — JWT-сценарии fuzz пропускаются.");
+    return null;
+  }
   const res = await tryLogin(baseUrl, email, password);
   if (res.status !== 200 || !res.responseSnippet) {
     return null;

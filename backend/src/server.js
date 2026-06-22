@@ -1,12 +1,54 @@
+function validateEnv() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const issues = [];
+
+  const jwtSecret = process.env.JWT_SECRET?.trim();
+  const weakJwtSecrets = ["secret", "changeme", "docker-devchange-me", "docker-dev-change-me", "your-jwt-secret"];
+  if (!jwtSecret || weakJwtSecrets.includes(jwtSecret)) {
+    issues.push(
+      "JWT_SECRET должен быть задан и не совпадать с дефолтными значениями (secret, changeme, docker-devchange-me, your-jwt-secret)."
+    );
+  }
+
+  const dbPassword = process.env.DB_PASSWORD?.trim();
+  if (!dbPassword) {
+    issues.push("DB_PASSWORD должен быть задан и не пустой.");
+  }
+
+  const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+  const weakAdminPasswords = ["admin123", "password"];
+  if (!adminPassword || weakAdminPasswords.includes(adminPassword)) {
+    issues.push("ADMIN_PASSWORD должен быть задан и не совпадать с дефолтными значениями (admin123, password).");
+  }
+
+  if (issues.length === 0) {
+    return;
+  }
+
+  if (isProduction) {
+    const message = `Проверка переменных окружения не пройдена:\n${issues.map((item) => `- ${item}`).join("\n")}`;
+    console.error(message);
+    throw new Error(message);
+  }
+
+  for (const issue of issues) {
+    console.warn(`[env] ${issue}`);
+  }
+}
+
+require("dotenv").config();
+try {
+  validateEnv();
+} catch {
+  process.exit(1);
+}
+
 const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const routes = require("./routes");
 const initDb = require("./services/initDb");
-
-dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3020;

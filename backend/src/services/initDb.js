@@ -153,7 +153,11 @@ async function initDb() {
 
 async function ensureAdminAccount(pool) {
   const email = (process.env.ADMIN_EMAIL || "admin@shop.local").trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "admin123";
+  const rawPassword = process.env.ADMIN_PASSWORD;
+  if (rawPassword == null || String(rawPassword).trim() === "") {
+    throw new Error("ADMIN_PASSWORD не задан. Укажите пароль администратора в переменных окружения.");
+  }
+  const password = String(rawPassword).trim();
   const name = "Администратор";
 
   const hash = await bcrypt.hash(password, 10);
@@ -168,7 +172,7 @@ async function ensureAdminAccount(pool) {
       `,
       [name, email, hash]
     );
-    console.log(`Создан администратор: ${email} (задайте ADMIN_PASSWORD в .env для продакшена).`);
+    console.log(`Создан администратор: ${email}`);
     return;
   }
 
